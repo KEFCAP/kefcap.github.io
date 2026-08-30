@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KEFCAP Quality Dividend</title>
+<style>
+:root{
+  --bg:#0a0e0d; --panel:#101614; --panel2:#0d1210; --border:#1e2a25;
+  --grid:#16211c; --text:#c8d6cf; --dim:#5f7268; --green:#2ee68a; --red:#ff5c5c;
+  --amber:#ffc857; --cyan:#4dd6e8; --font:'SF Mono','Menlo','Consolas','Courier New',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;padding:24px 28px 60px}
+h1{font-size:18px;letter-spacing:2px;color:#e8f4ee}
+h2{font-size:13px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin:38px 0 14px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.sub{color:var(--dim);font-size:11px;margin-top:4px;letter-spacing:1px}
+.pos{color:var(--green)} .neg{color:var(--red)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:18px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:14px 16px}
+.card .lbl{font-size:10px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase}
+.card .val{font-size:21px;margin-top:6px;color:#e8f4ee}
+.card .note{font-size:10px;color:var(--dim);margin-top:4px}
+.how{background:var(--panel2);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:6px;padding:14px 18px;margin-top:22px;font-size:11.5px;line-height:1.7;color:#9db3a8}
+.how b{color:var(--text)}
+.warn{border-left-color:var(--amber)}
+.warn b{color:var(--amber)}
+.rangebar{display:flex;gap:6px;margin:12px 0;flex-wrap:wrap;align-items:center}
+.rangebar button{background:var(--panel);border:1px solid var(--border);color:var(--dim);font-family:var(--font);font-size:11px;padding:5px 11px;border-radius:4px;cursor:pointer}
+.rangebar button:hover{color:var(--text)}
+.rangebar button.on{background:var(--green);color:#04120b;border-color:var(--green);font-weight:bold}
+.rangebar button:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.modebar button.on{background:var(--cyan);color:#04120b;border-color:var(--cyan)}
+.chartwrap{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:16px}
+canvas{display:block;width:100%}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;font-variant-numeric:tabular-nums}
+th{font-size:10px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;text-align:right;padding:8px 10px;border-bottom:1px solid var(--border)}
+td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--grid)}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:none}
+.legend{font-size:11px;color:var(--dim);margin-top:8px;line-height:1.6}
+.legend .sw{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:5px}
+.flex2{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
+@media(max-width:900px){.flex2{grid-template-columns:1fr}}
+.badge{display:inline-block;font-size:9px;letter-spacing:1px;padding:2px 7px;border-radius:3px;background:#3a2c0d;color:var(--amber);margin-left:8px;vertical-align:2px}
+.chk{display:inline-block;font-size:9px;letter-spacing:1px;padding:2px 7px;border-radius:3px;background:#123024;color:var(--green);margin-left:8px;vertical-align:1px}
+.tip{position:absolute;pointer-events:none;background:#04120bee;border:1px solid var(--green);border-radius:4px;padding:6px 9px;font-size:11px;color:#e8f4ee;display:none;z-index:9}
+.wbar{height:8px;border-radius:2px;background:var(--green);display:block}
+.hold{display:grid;grid-template-columns:58px 1fr 46px;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid var(--grid);font-size:12px}
+.hold:last-child{border-bottom:none}
+.hold .tk{color:#e8f4ee}
+.hold .pc{text-align:right;color:var(--dim)}
+.disc{font-size:10.5px;line-height:1.75;color:var(--dim);background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:14px 18px;margin-top:14px}
+.disc b{color:#9db3a8}
+.moneyrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.moneyrow label{font-size:10px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase}
+.moneyrow input{background:var(--panel2);border:1px solid var(--border);border-radius:4px;color:#e8f4ee;
+  font-family:var(--font);font-size:14px;padding:6px 10px;width:150px}
+.moneyrow input:focus{outline:none;border-color:var(--green)}
+</style>
+</head>
+<body>
+
+<h1>KEFCAP // QUALITY DIVIDEND STRATEGY <span class="badge">HYPOTHETICAL BACKTEST</span></h1>
+<div class="sub" id="stamp">—</div>
+
+<div class="cards" id="heroCards"></div>
+
+<div class="how">
+<b>HOW IT WORKS</b> — The strategy holds a concentrated basket of large, established dividend-paying companies selected by a <b>proprietary quality screener developed and owned by KEF CAPITAL LLC</b>. The basket is <b>reconstituted and rebalanced once a year</b> and typically holds <b>23 to 29 names</b>. Position sizes come out of the screen itself in 2% increments — a company that clears more of the screen's quality tests carries more weight — and every year's weights sum to exactly 100%, which doubles as the run's validity check. Each year's basket is built only from holdings data that was already public before that year began. Two switches drive this page: the <b>start year</b> decides when the money goes to work, and the <b>mode</b> decides what happens to the dividends — reinvested, or taken out as income. Every figure here is <b>simulated</b>: no capital was invested, and no costs, spreads, or taxes are deducted. Read the methodology and disclosure panels at the bottom before drawing conclusions from any of it.
+</div>
+
+<h2 style="margin-bottom:6px">Start Year &amp; Dividend Treatment</h2>
+<div class="rangebar" id="yearbar"></div>
+<div class="rangebar modebar" id="modebar"></div>
+<div class="moneyrow" style="margin-top:12px">
+  <label for="bal">Amount invested</label>
+  <input id="bal" type="text" inputmode="numeric" value="10,000">
+  <span class="sub" style="margin:0">Put your own number in — every figure on the page recalculates. Nothing is sent anywhere.</span>
+</div>
+<div class="sub" id="dialNote">—</div>
+
+<h2 id="growthHead">Growth of $10,000</h2>
+<div class="chartwrap">
+  <div style="position:relative">
+    <canvas id="growth" height="360"></canvas>
+    <div class="tip" id="tip"></div>
+  </div>
+  <div class="legend">
+    <span><span class="sw" style="background:var(--green)"></span>KEFCAP Quality Dividend</span>
+    &nbsp;&nbsp;<span><span class="sw" style="background:var(--cyan)"></span>SCHD</span>
+    &nbsp;&nbsp;<span><span class="sw" style="background:var(--amber)"></span>SPY</span>
+  </div>
+  <table id="summaryTable"></table>
+  <div class="legend" id="growthNote">—</div>
+</div>
+
+<h2>Dividend Income — Living On It Without Selling</h2>
+<div class="chartwrap">
+  <canvas id="incBar" height="260"></canvas>
+  <div class="legend">
+    <span><span class="sw" style="background:var(--green)"></span>KEFCAP</span>
+    &nbsp;&nbsp;<span><span class="sw" style="background:var(--cyan)"></span>SCHD</span>
+    &nbsp;&nbsp;<span><span class="sw" style="background:var(--amber)"></span>SPY</span>
+    &nbsp;— cash paid out each year, never selling a share
+  </div>
+  <table id="incTable"></table>
+  <div class="legend" id="incNote">—</div>
+</div>
+
+<h2>Calendar-Year Total Return</h2>
+<div class="chartwrap">
+  <canvas id="bars" height="300"></canvas>
+  <table id="yearTable"></table>
+</div>
+
+<h2 id="compHead">Portfolio Composition</h2>
+<div class="flex2">
+  <div class="chartwrap">
+    <div class="sub" id="holdHead" style="margin-bottom:10px">—</div>
+    <div id="holdList"></div>
+  </div>
+  <div>
+    <div class="chartwrap" style="padding:6px 16px 16px"><table id="contribTable"></table></div>
+    <div class="chartwrap" style="margin-top:14px"><canvas id="donut" height="230"></canvas></div>
+  </div>
+</div>
+
+<h2>Turnover — What Changed Each Rebalance</h2>
+<div class="flex2">
+  <div class="chartwrap" style="padding:6px 16px 16px"><table id="turnTable"></table></div>
+  <div class="chartwrap"><canvas id="turnBar" height="230"></canvas></div>
+</div>
+
+<h2>Concentration — Where the Result Actually Came From</h2>
+<div class="chartwrap">
+  <table id="concTable"></table>
+  <div class="legend" id="concNote"></div>
+</div>
+
+<h2>What the Timing Correction Cost</h2>
+<div class="chartwrap">
+  <table id="fixTable"></table>
+  <div class="legend" id="fixNote"></div>
+</div>
+
+<div class="how warn">
+<b>METHODOLOGY AND KNOWN LIMITATIONS</b> — Each year's basket is reconstructed from regulatory filings whose reporting date falls on or before December 31 of the prior year, so every holding shown for a given year was already a matter of public record before that year began. An earlier version of this study used filings dated one to two months into the year being measured; correcting that cost more than two points of annual return, and the figures on this page are the corrected ones. What remains: <b>the rule itself was written with hindsight.</b> Point-in-time data fixes the inputs, not the fact that the screen was designed in 2026 and then tested backward — that limitation cannot be engineered away and is the reason a six-year result is a starting point rather than a conclusion. Beyond it: the study begins in 2020 because the underlying filing regime does not reach further back; drawdown is measured calendar-year rather than peak-to-trough, so real intra-year declines were deeper than the table shows; turnover is high and no trading costs, spreads, slippage, or taxes are deducted anywhere; and the income figures are the basket's own trailing cash yields inside a backtest, not a forward yield and not a distribution anyone is promising.
+</div>
+
+<div class="disc">
+<b>IMPORTANT DISCLOSURES.</b> The performance shown on this page is <b>hypothetical and backtested</b>. It does not represent the results of actual trading and no client or proprietary capital was invested in this strategy during the periods shown. Hypothetical results have inherent limitations: they are prepared with the benefit of hindsight in the design of the rules, they do not reflect the impact that material economic or market factors might have had on decision-making in real time, and they cannot account for the effect of financial risk on actual trading. Results assume annual rebalancing with no transaction costs, bid-ask spreads, slippage, management fees, or taxes. Dividend and income figures reflect cash dividends actually paid by the underlying companies in the years shown, applied to a portfolio nobody held; they are not a forecast and not a distribution commitment. Index and ETF comparisons are shown for reference only; an investor cannot invest directly in an index, and the benchmarks differ from this strategy in holdings, concentration, and volatility. <b>Past performance — and hypothetical past performance in particular — is not indicative of future results.</b> This material is for informational purposes only. It is not an offer to sell or a solicitation of an offer to buy any security, and it is not investment advice. KEF CAPITAL LLC is not registered as an investment adviser.
+</div>
+
+<script>
+const ASOF = "2026-08-30";
+const YEARS = [2020, 2021, 2022, 2023, 2024, 2025];
+
+/* calendar-year TOTAL return %, dividends reinvested */
+const RET = {
+  KEFCAP: [ 7.6696, 23.2973, -6.8125, 12.2952, 21.2669, 14.1620],
+  SCHD:   [14.7307, 31.7450, -3.2316,  4.6828, 10.8444,  4.5695],
+  SPY:    [17.2352, 30.5055, -18.6464, 26.7092, 25.5893, 18.0090]
+};
+
+/* the same years measured the other way: price change alone, and the cash
+   dividends paid that year as a percent of the January 1 price */
+const INC = {
+2020:{y:3.0225,p:4.4445, sy:3.4941,sp:10.4529, py:1.7518,pp:15.0860},
+2021:{y:2.9616,p:19.9971, sy:3.5584,sp:27.8349, py:1.5497,pp:28.7887},
+2022:{y:2.4938,p:-9.4037, sy:3.1704,sp:-6.5215, py:1.3230,pp:-19.9452},
+2023:{y:2.6244,p:9.5043, sy:3.5247,sp:0.9146, py:1.7418,pp:24.8122},
+2024:{y:2.6987,p:18.4521, sy:3.8923,sp:6.8718, py:1.4950,pp:23.9987},
+2025:{y:2.6559,p:11.2903, sy:3.8408,sp:0.6236, py:1.2454,pp:16.6393},
+};
+
+/* what the original run said before the snapshot timing was corrected */
+const WAS = {cagr:13.6945, tenk:21599.19, byYear:[7.2128, 23.8827, -1.1452, 14.7034, 24.1109, 15.5570]};
+
+/* holdings: ticker -> weight %, 50 slots and exactly 100% every year */
+const HOLD = {
+2020:{PG:10,VZ:8,INTC:6,JNJ:6,MSFT:6,PFE:6,AAPL:4,CVX:4,JPM:4,MRK:4,PEP:4,XOM:4,ABBV:2,ABT:2,BMY:2,CMCSA:2,COST:2,HD:2,IBM:2,KO:2,MCD:2,MDT:2,MO:2,T:2,TXN:2,UNH:2,V:2,WFC:2,WMT:2},
+2021:{JNJ:8,PFE:8,PG:8,VZ:8,KO:6,MSFT:6,AAPL:4,CMCSA:4,HD:4,JPM:4,MRK:4,PEP:4,WMT:4,ABT:2,BLK:2,CVX:2,DIS:2,IBM:2,INTC:2,MMM:2,MO:2,QCOM:2,T:2,TXN:2,UNH:2,UPS:2,V:2},
+2022:{HD:10,JNJ:8,PG:8,CSCO:6,JPM:6,MRK:6,MSFT:6,PFE:6,AAPL:4,BAC:4,CMCSA:4,KO:4,PEP:4,VZ:4,ABT:2,ACN:2,AVGO:2,BLK:2,MO:2,PM:2,TXN:2,UNH:2,V:2,XOM:2},
+2023:{HD:10,JNJ:8,MRK:8,PEP:8,PG:8,JPM:6,KO:6,MSFT:6,PFE:6,AAPL:4,AVGO:4,ABBV:2,AMGN:2,CSCO:2,CVX:2,IBM:2,LLY:2,LMT:2,MA:2,PM:2,TXN:2,UNH:2,V:2,XOM:2},
+2024:{ABBV:8,AVGO:8,JNJ:8,PG:8,AAPL:6,HD:6,JPM:6,MSFT:6,XOM:6,CVX:4,KO:4,MRK:4,PEP:4,UNH:4,AMGN:2,BLK:2,CSCO:2,MA:2,PFE:2,TXN:2,V:2,VZ:2,WMT:2},
+2025:{HD:10,PG:8,XOM:8,AAPL:6,ABBV:6,AVGO:6,CVX:6,JPM:6,MSFT:6,JNJ:4,MRK:4,WMT:4,BAC:2,BLK:2,BMY:2,CSCO:2,MA:2,MO:2,NVDA:2,PEP:2,TXN:2,UNH:2,UPS:2,V:2,VZ:2},
+};
+
+/* best and worst three by contribution (weight x return, percentage points) */
+const CONTRIB = {
+2020:{best:[["AAPL",4,78.2,3.13],["MSFT",6,39.9,2.40],["PG",10,15.5,1.55]], worst:[["XOM",4,-37.2,-1.49],["CVX",4,-26.5,-1.06],["INTC",6,-16.1,-0.96]]},
+2021:{best:[["PFE",8,66.7,5.34],["MSFT",6,55.8,3.35],["HD",4,60.5,2.42]], worst:[["VZ",8,-7.7,-0.62],["DIS",2,-12.8,-0.26],["T",2,-8.1,-0.16]]},
+2022:{best:[["MRK",6,49.0,2.94],["XOM",2,80.5,1.61],["JNJ",8,5.7,0.45]], worst:[["HD",10,-20.8,-2.08],["MSFT",6,-27.7,-1.66],["CSCO",6,-22.2,-1.33]]},
+2023:{best:[["AVGO",4,106.3,4.25],["MSFT",6,58.3,3.50],["AAPL",4,54.8,2.19]], worst:[["PFE",6,-41.3,-2.48],["JNJ",8,-9.4,-0.75],["CVX",2,-10.9,-0.22]]},
+2024:{best:[["AVGO",8,116.5,9.32],["JPM",6,42.6,2.56],["AAPL",6,35.6,2.13]], worst:[["JNJ",8,-6.7,-0.54],["MRK",4,-9.8,-0.39],["PEP",4,-9.2,-0.37]]},
+2025:{best:[["AVGO",6,50.5,3.03],["JPM",6,37.1,2.23],["JNJ",4,48.1,1.92]], worst:[["HD",10,-9.2,-0.92],["PG",8,-11.4,-0.91],["UNH",2,-33.0,-0.66]]},
+};
+
+
+/* ================= HELPERS ================= */
+const $ = id => document.getElementById(id);
+const sgn = (x,d=2) => (x>=0?"+":"")+x.toFixed(d)+"%";
+const cls = x => x>=0?"pos":"neg";
+const fmt$ = x => "$"+Math.round(x).toLocaleString("en-US");
+
+let curYear = 2020;
+let mode = "reinvest";            /* reinvest | withdraw */
+let balance = 10000;
+
+const startIdx = () => YEARS.indexOf(curYear);
+const winYears = () => YEARS.slice(startIdx());
+const win = k => RET[k].slice(startIdx());
+
+function series(rets){ let v=balance, out=[balance]; rets.forEach(r=>{ v*=1+r/100; out.push(v); }); return out; }
+function cagr(rets){ let v=1; rets.forEach(r=>v*=1+r/100); return (Math.pow(v,1/rets.length)-1)*100; }
+function total(rets){ let v=1; rets.forEach(r=>v*=1+r/100); return (v-1)*100; }
+function downYears(rets){ return rets.filter(r=>r<0).length; }
+
+/* price-only returns for the window, by series key */
+const priceKeys = {KEFCAP:"p", SCHD:"sp", SPY:"pp"};
+const yieldKeys = {KEFCAP:"y", SCHD:"sy", SPY:"py"};
+function priceWin(k){ return winYears().map(y=>INC[y][priceKeys[k]]); }
+function yieldWin(k){ return winYears().map(y=>INC[y][yieldKeys[k]]); }
+
+/* never sell a share: balance grows on price alone, each year pays its yield */
+function path(k, start){
+  let bal=start, rows=[], bals=[start];
+  winYears().forEach((y,i)=>{
+    const income = bal * INC[y][yieldKeys[k]] / 100;
+    rows.push({year:y, startBal:bal, income:income,
+               yld:INC[y][yieldKeys[k]], onCost:income/start*100});
+    bal *= 1 + INC[y][priceKeys[k]]/100;
+    bals.push(bal);
+  });
+  return {rows, bals, end:bal, totalIncome:rows.reduce((a,r)=>a+r.income,0)};
+}
+
+let GK, GS, GP, PK, PS, PP;
+function rebuild(){
+  GK=series(win("KEFCAP")); GS=series(win("SCHD")); GP=series(win("SPY"));
+  PK=path("KEFCAP",balance);  PS=path("SCHD",balance);  PP=path("SPY",balance);
+}
+
+$("stamp").textContent = "CALENDAR YEARS 2020–2025 · POINT-IN-TIME HOLDINGS · SIMULATED, NO CAPITAL INVESTED · DATA "+ASOF;
+
+/* ================= CONTROLS ================= */
+$("yearbar").innerHTML = '<span class="sub" style="margin:0 6px 0 0">MONEY IN:</span>'+
+  YEARS.map(y=>`<button data-y="${y}" class="${y===curYear?'on':''}">${y}</button>`).join("");
+$("yearbar").onclick = e=>{ if(e.target.dataset.y){ curYear=+e.target.dataset.y;
+  [...$("yearbar").querySelectorAll("button")].forEach(b=>b.classList.toggle("on",+b.dataset.y===curYear));
+  renderAll(); } };
+
+$("modebar").innerHTML = '<span class="sub" style="margin:0 6px 0 0">DIVIDENDS:</span>'+
+  [["reinvest","Reinvested"],["withdraw","Withdrawn as income"]]
+  .map(m=>`<button data-m="${m[0]}" class="${m[0]===mode?'on':''}">${m[1]}</button>`).join("");
+$("modebar").onclick = e=>{ if(e.target.dataset.m){ mode=e.target.dataset.m;
+  [...$("modebar").querySelectorAll("button")].forEach(b=>b.classList.toggle("on",b.dataset.m===mode));
+  renderAll(); } };
+
+$("bal").addEventListener("input", e=>{
+  const n = parseFloat(e.target.value.replace(/[^0-9.]/g,""));
+  balance = (isFinite(n) && n>0) ? n : 10000;
+  renderAll();
+});
+$("bal").addEventListener("blur", e=>{ e.target.value = balance.toLocaleString("en-US"); });
+
+/* ================= HERO CARDS ================= */
+function renderCards(){
+  const n=winYears().length, last=GK.length-1, span=curYear+"–2025";
+  const names=Object.keys(HOLD[curYear]).length;
+  let c;
+  if(mode==="reinvest"){
+    const worst=Math.min(...win("KEFCAP")), worstYr=YEARS[startIdx()+win("KEFCAP").indexOf(worst)];
+    c=[
+     ["ANNUALIZED RETURN", sgn(cagr(win("KEFCAP"))), "", "SCHD "+sgn(cagr(win("SCHD")))+" · SPY "+sgn(cagr(win("SPY")))],
+     [fmt$(balance)+" BECOMES", fmt$(GK[last]), "", "SCHD "+fmt$(GS[last])+" · SPY "+fmt$(GP[last])],
+     ["CUMULATIVE", sgn(total(win("KEFCAP")),1), "", span+" · "+n+(n===1?" year":" years")],
+     [worst<0?"WORST YEAR":"WEAKEST YEAR", sgn(worst), worst<0?"neg":"", worstYr+" · SPY "+sgn(RET.SPY[YEARS.indexOf(worstYr)])+" that year"],
+     ["DOWN YEARS", downYears(win("KEFCAP"))+" of "+n, "", "SCHD "+downYears(win("SCHD"))+" · SPY "+downYears(win("SPY"))],
+     ["NAMES IN "+curYear, names, "", "reconstituted annually"]
+    ];
+  } else {
+    const p=PK, ps=PS;
+    const lastRow=p.rows[p.rows.length-1];
+    const avg=yieldWin("KEFCAP").reduce((a,b)=>a+b,0)/n;
+    c=[
+     ["TOTAL INCOME", fmt$(p.totalIncome), "", span+" · SCHD "+fmt$(ps.totalIncome)],
+     ["INCOME IN "+lastRow.year, fmt$(lastRow.income), "", "on "+fmt$(balance)+" invested"],
+     ["YIELD ON COST", sgn(lastRow.onCost), "", lastRow.year+" income ÷ original "+fmt$(balance)],
+     ["AVERAGE YIELD", sgn(avg), "", "SCHD "+sgn(yieldWin("SCHD").reduce((a,b)=>a+b,0)/n)],
+     ["BALANCE LEFT", fmt$(p.end), "", "no shares sold · SCHD "+fmt$(ps.end)],
+     ["NAMES IN "+curYear, names, "", "reconstituted annually"]
+    ];
+  }
+  $("heroCards").innerHTML = c.map(x=>`<div class="card"><div class="lbl">${x[0]}</div><div class="val ${x[2]}">${x[1]}</div><div class="note">${x[3]}</div></div>`).join("");
+}
+
+/* ================= GROWTH CHART ================= */
+let growthPts=null;
+function growthSeries(){
+  return mode==="reinvest" ? [GK,GS,GP] : [PK.bals,PS.bals,PP.bals];
+}
+function drawGrowth(){
+  const cv=$("growth"), ctx=cv.getContext("2d");
+  const W=cv.width=cv.clientWidth*2, H=cv.height=720; cv.style.height="360px";
+  ctx.clearRect(0,0,W,H);
+  const [A,B_,C]=growthSeries();
+  const N=A.length-1;
+  const all=[...A,...B_,...C];
+  let lo=Math.min(...all), hi=Math.max(...all);
+  const step=(hi-lo)>12000?2500:(hi-lo)>5000?1000:500;
+  lo=Math.floor(lo/step)*step; hi=Math.ceil(hi/step)*step;
+  const L=110,R=W-30,T=25,Bm=H-55;
+  const X=i=>L+(R-L)*i/N, Y=v=>Bm-(Bm-T)*(v-lo)/(hi-lo);
+  ctx.font="20px monospace"; ctx.lineWidth=1;
+  for(let v=lo; v<=hi+1; v+=step){
+    const y=Y(v);
+    ctx.strokeStyle="#16211c"; ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(R,y); ctx.stroke();
+    ctx.fillStyle="#5f7268"; ctx.fillText(fmt$(v),6,y+7);
+  }
+  const labs=["Jan 1 "+curYear].concat(winYears().map(String));
+  ctx.fillStyle="#5f7268";
+  labs.forEach((l,i)=>ctx.fillText(l, Math.max(4,X(i)-(i?26:40)), H-18));
+  function line(arr,color,w){ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();
+    arr.forEach((v,i)=>{i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v));});ctx.stroke();
+    arr.forEach((v,i)=>{ctx.fillStyle=color;ctx.beginPath();ctx.arc(X(i),Y(v),6,0,7);ctx.fill();});}
+  line(C,"#ffc857",3);
+  line(B_,"#4dd6e8",3);
+  line(A,"#2ee68a",5);
+  ctx.font="bold 22px monospace";
+  const tags=[{v:C[N],c:"#ffc857"},{v:A[N],c:"#2ee68a"},{v:B_[N],c:"#4dd6e8"}].sort((a,b)=>b.v-a.v);
+  tags.forEach((t,i)=>{ t.y=Y(t.v)-34; if(i && t.y<tags[i-1].y+44) t.y=tags[i-1].y+44; });
+  tags.forEach(t=>{
+    const txt=fmt$(t.v), w=ctx.measureText(txt).width, x=X(N)-w-30;
+    ctx.fillStyle="#0a0e0d"; ctx.fillRect(x-9,t.y-19,w+18,28);
+    ctx.strokeStyle=t.c; ctx.lineWidth=1; ctx.strokeRect(x-9,t.y-19,w+18,28);
+    ctx.fillStyle=t.c; ctx.fillText(txt,x,t.y);
+  });
+  growthPts={L,R,N,A,B_,C};
+}
+$("growth").addEventListener("mousemove",e=>{
+  if(!growthPts) return;
+  const r=$("growth").getBoundingClientRect(), x=(e.clientX-r.left)*2;
+  const {L,R,N,A,B_,C}=growthPts;
+  let i=Math.round((x-L)/(R-L)*N); i=Math.max(0,Math.min(N,i));
+  const tip=$("tip"), lab=i===0?("Jan 1 "+curYear):YEARS[startIdx()+i-1]+" year end";
+  tip.style.display="block";
+  tip.style.left=Math.min(e.clientX-r.left+14, r.width-215)+"px";
+  tip.style.top=(e.clientY-r.top-78)+"px";
+  tip.innerHTML=lab+"<br>KEFCAP <b class='pos'>"+fmt$(A[i])+"</b><br>SCHD "+fmt$(B_[i])+"<br>SPY "+fmt$(C[i]);
+});
+$("growth").addEventListener("mouseleave",()=>$("tip").style.display="none");
+
+function renderSummary(){
+  const n=winYears().length, last=GK.length-1;
+  if(mode==="reinvest"){
+    $("growthHead").textContent = "Growth of "+fmt$(balance)+" — "+(n===1?"in 2025":curYear+" through 2025");
+    $("growthNote").textContent = n+(n===1?" calendar year":" calendar years")+", "+curYear+"–2025. "+
+      fmt$(balance)+" goes to work on January 1, "+curYear+", every dividend is reinvested, and the basket is reconstituted at the start of every year in the window.";
+    $("summaryTable").innerHTML =
+     `<tr><th>${curYear}–2025 · dividends reinvested</th><th>Annualized</th><th>Cumulative</th><th>$10k becomes</th><th>Best Year</th><th>Worst Year</th><th>Down Years</th></tr>`+
+     [["KEFCAP Quality Dividend",win("KEFCAP"),GK,"var(--green)"],["SCHD",win("SCHD"),GS,"var(--cyan)"],["SPY",win("SPY"),GP,"var(--amber)"]]
+     .map(r=>`<tr><td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${r[3]};margin-right:7px"></span>${r[0]}</td>`+
+       `<td class="${cls(cagr(r[1]))}">${sgn(cagr(r[1]))}</td>`+
+       `<td class="${cls(total(r[1]))}">${sgn(total(r[1]),1)}</td>`+
+       `<td>${fmt$(r[2][last])}</td>`+
+       `<td class="${cls(Math.max(...r[1]))}">${sgn(Math.max(...r[1]))}</td>`+
+       `<td class="${cls(Math.min(...r[1]))}">${sgn(Math.min(...r[1]))}</td>`+
+       `<td>${downYears(r[1])}</td></tr>`).join("");
+  } else {
+    $("growthHead").textContent = "What's Left of the "+fmt$(balance)+" — "+(n===1?"in 2025":curYear+" through 2025");
+    $("growthNote").textContent = "Same "+fmt$(balance)+", but every dividend is taken out and spent instead of reinvested. "+
+      "The line is share price alone, so it climbs more slowly — that gap is the income, and it's shown in dollars in the next section.";
+    $("summaryTable").innerHTML =
+     `<tr><th>${curYear}–2025 · income withdrawn</th><th>Price-only CAGR</th><th>Balance left</th><th>Total income</th><th>Income + balance</th><th>Avg yield</th><th>Final yield on cost</th></tr>`+
+     [["KEFCAP Quality Dividend","KEFCAP",PK,"var(--green)"],["SCHD","SCHD",PS,"var(--cyan)"],["SPY","SPY",PP,"var(--amber)"]]
+     .map(r=>{
+       const p=r[2], pr=priceWin(r[1]), yl=yieldWin(r[1]);
+       const lastOnCost=p.rows[p.rows.length-1].onCost;
+       return `<tr><td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${r[3]};margin-right:7px"></span>${r[0]}</td>`+
+        `<td class="${cls(cagr(pr))}">${sgn(cagr(pr))}</td>`+
+        `<td>${fmt$(p.end)}</td>`+
+        `<td>${fmt$(p.totalIncome)}</td>`+
+        `<td>${fmt$(p.end+p.totalIncome)}</td>`+
+        `<td>${sgn(yl.reduce((a,b)=>a+b,0)/yl.length)}</td>`+
+        `<td>${sgn(lastOnCost)}</td></tr>`;
+     }).join("");
+  }
+}
+
+/* ================= INCOME SECTION ================= */
+function renderIncome(){
+  const pk=PK, ps=PS, pp=PP;
+  drawIncBar(pk,ps,pp);
+  $("incTable").innerHTML =
+   "<tr><th>Year</th><th>Yield</th><th>Income</th><th>On original cost</th><th>SCHD income</th><th>SPY income</th><th>Balance after</th></tr>"+
+   pk.rows.map((r,i)=>`<tr><td>${r.year}</td><td>${sgn(r.yld)}</td><td>${fmt$(r.income)}</td>`+
+     `<td class="pos">${sgn(r.onCost)}</td><td>${fmt$(ps.rows[i].income)}</td><td>${fmt$(pp.rows[i].income)}</td>`+
+     `<td>${fmt$(pk.bals[i+1])}</td></tr>`).join("")+
+   `<tr><td><b>Total</b></td><td></td><td><b>${fmt$(pk.totalIncome)}</b></td><td></td>`+
+   `<td><b>${fmt$(ps.totalIncome)}</b></td><td><b>${fmt$(pp.totalIncome)}</b></td><td><b>${fmt$(pk.end)}</b></td></tr>`;
+  const first=pk.rows[0], last=pk.rows[pk.rows.length-1];
+  $("incNote").textContent =
+    "Never sell a share: the balance grows on price alone and each year pays out that year's yield on the balance it started with. "+
+    "Income on original cost is that year's cash as a percent of the "+fmt$(balance)+" you put in — it started at "+sgn(first.onCost)+
+    " in "+first.year+" and reached "+sgn(last.onCost)+" by "+last.year+", because the same shares kept raising their dividends. "+
+    "SCHD paid more income across the window ("+fmt$(ps.totalIncome)+" against "+fmt$(pk.totalIncome)+
+    ") while this basket left a larger balance ("+fmt$(pk.end)+" against "+fmt$(ps.end)+"). That trade — more income now versus more capital later — is the real choice here.";
+}
+
+function drawIncBar(pk,ps,pp){
+  const cv=$("incBar"), ctx=cv.getContext("2d");
+  const W=cv.width=cv.clientWidth*2, H=cv.height=520; cv.style.height="260px";
+  ctx.clearRect(0,0,W,H);
+  const rows=pk.rows, n=rows.length;
+  let max=Math.max(...rows.map((r,i)=>Math.max(r.income, ps.rows[i].income, pp.rows[i].income)))*1.18 || 1;
+  const mag=Math.pow(10, Math.floor(Math.log10(max))), nice=[1,1.25,1.5,2,2.5,3,4,5,7.5,10];
+  max = mag * nice.find(v=>v*mag>=max);
+  const L=110,R=W-30,T=40,B=H-55;
+  const Y=v=>B-(B-T)*v/max;
+  ctx.font="20px monospace";
+  for(let i=0;i<=4;i++){
+    const v=max*i/4, y=Y(v);
+    ctx.strokeStyle="#16211c"; ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(R,y); ctx.stroke();
+    ctx.fillStyle="#5f7268"; ctx.fillText(fmt$(v),6,y+7);
+  }
+  const slot=(R-L)/n, bw=slot/4.4, colors=["#2ee68a","#4dd6e8","#ffc857"];
+  rows.forEach((r,i)=>{
+    const vals=[r.income, ps.rows[i].income, pp.rows[i].income];
+    const x0=L+slot*i+slot/2-bw*1.6;
+    vals.forEach((v,k)=>{
+      const x=x0+k*bw*1.08;
+      ctx.fillStyle=colors[k]; ctx.fillRect(x,Y(v),bw,B-Y(v));
+    });
+    ctx.fillStyle="#e8f4ee"; ctx.font="bold 19px monospace";
+    ctx.fillText(fmt$(r.income), x0-2, Y(r.income)-12);
+    ctx.font="20px monospace"; ctx.fillStyle="#5f7268";
+    ctx.fillText(r.year, L+slot*i+slot/2-26, H-18);
+  });
+  ctx.fillStyle="#5f7268"; ctx.fillText("cash income per year on "+fmt$(balance)+" invested, no shares sold", L, 26);
+}
+
+/* ================= YEARLY BARS ================= */
+function drawBars(){
+  const cv=$("bars"), ctx=cv.getContext("2d");
+  const W=cv.width=cv.clientWidth*2, H=cv.height=600; cv.style.height="300px";
+  ctx.clearRect(0,0,W,H);
+  const all=[...RET.KEFCAP,...RET.SCHD,...RET.SPY];
+  let lo=Math.min(...all,0), hi=Math.max(...all,0);
+  lo=Math.floor(lo/10)*10-5; hi=Math.ceil(hi/10)*10+5;
+  const L=90,R=W-30,T=25,B=H-55;
+  const Y=v=>B-(B-T)*(v-lo)/(hi-lo);
+  ctx.font="20px monospace";
+  for(let v=Math.ceil(lo/10)*10; v<=hi; v+=10){
+    const y=Y(v);
+    ctx.strokeStyle=v===0?"#2a3a33":"#16211c"; ctx.lineWidth=v===0?2:1;
+    ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();
+    ctx.fillStyle="#5f7268"; ctx.fillText((v>0?"+":"")+v+"%",8,y+7);
+  }
+  const slot=(R-L)/6, bw=slot/4.4, colors=["#2ee68a","#4dd6e8","#ffc857"];
+  const sets=[RET.KEFCAP,RET.SCHD,RET.SPY];
+  YEARS.forEach((yr,i)=>{
+    const x0=L+slot*i+slot/2-bw*1.5;
+    sets.forEach((s,k)=>{
+      const v=s[i], x=x0+k*bw*1.05, y=Y(Math.max(v,0)), h=Math.abs(Y(v)-Y(0));
+      ctx.fillStyle=colors[k]; ctx.globalAlpha=v<0?0.55:1;
+      ctx.fillRect(x,y,bw,h); ctx.globalAlpha=1;
+    });
+    ctx.fillStyle="#5f7268"; ctx.fillText(yr, L+slot*i+slot/2-26, H-18);
+    ctx.fillStyle="#e8f4ee"; ctx.font="bold 19px monospace";
+    const v=RET.KEFCAP[i];
+    ctx.fillText(sgn(v,1), x0-4, v>=0?Y(v)-12:Y(v)+30);
+    ctx.font="20px monospace";
+  });
+}
+
+function renderYearTable(){
+  $("yearTable").innerHTML =
+   "<tr><th>Year</th><th>KEFCAP</th><th>SCHD</th><th>SPY</th><th>vs SCHD</th><th>vs SPY</th><th>Yield</th><th>Names</th></tr>"+
+   YEARS.map((yr,i)=>{
+     const k=RET.KEFCAP[i], s=RET.SCHD[i], p=RET.SPY[i];
+     const inWin = i>=startIdx();
+     const style = inWin ? (yr===curYear?' style="background:#0d1a14"':'') : ' style="opacity:.38"';
+     return `<tr${style}><td>${yr}${yr===curYear?' <span style="color:var(--green)">◂ start</span>':''}</td>`+
+       `<td class="${cls(k)}">${sgn(k)}</td><td class="${cls(s)}">${sgn(s)}</td><td class="${cls(p)}">${sgn(p)}</td>`+
+       `<td class="${cls(k-s)}">${sgn(k-s)}</td><td class="${cls(k-p)}">${sgn(k-p)}</td>`+
+       `<td>${sgn(INC[yr].y)}</td>`+
+       `<td>${Object.keys(HOLD[yr]).length}</td></tr>`;
+   }).join("");
+}
+
+/* ================= COMPOSITION ================= */
+function sortedHold(yr){
+  return Object.entries(HOLD[yr]).sort((a,b)=> b[1]-a[1] || a[0].localeCompare(b[0]));
+}
+function renderYear(){
+  const rows=sortedHold(curYear);
+  const sum=rows.reduce((a,r)=>a+r[1],0), slots=sum/2;
+  $("compHead").textContent = "Portfolio Composition — "+curYear+" Basket";
+  $("holdHead").innerHTML = curYear+" BASKET — "+rows.length+" NAMES · "+slots+" SLOTS"+
+    `<span class="${sum===100?'chk':'badge'}">WEIGHTS TOTAL ${sum}%</span>`;
+  const max=rows[0][1];
+  $("holdList").innerHTML = rows.map(r=>
+    `<div class="hold"><span class="tk">${r[0]}</span>`+
+    `<span><span class="wbar" style="width:${(r[1]/max*100).toFixed(1)}%"></span></span>`+
+    `<span class="pc">${r[1]}%</span></div>`).join("");
+  const c=CONTRIB[curYear];
+  $("contribTable").innerHTML =
+    `<tr><th>${curYear} · portfolio ${sgn(RET.KEFCAP[YEARS.indexOf(curYear)])}</th><th>Wt</th><th>Return</th><th>Contribution</th></tr>`+
+    c.best.map(r=>`<tr><td><span class="pos">▲</span> ${r[0]}</td><td>${r[1]}%</td><td class="${cls(r[2])}">${sgn(r[2],1)}</td><td class="pos">+${r[3].toFixed(2)} pp</td></tr>`).join("")+
+    c.worst.map(r=>`<tr><td><span class="neg">▼</span> ${r[0]}</td><td>${r[1]}%</td><td class="${cls(r[2])}">${sgn(r[2],1)}</td><td class="neg">${r[3].toFixed(2)} pp</td></tr>`).join("");
+  drawDonut();
+}
+function drawDonut(){
+  const cv=$("donut"), ctx=cv.getContext("2d");
+  const W=cv.width=cv.clientWidth*2, H=cv.height=460; cv.style.height="230px";
+  ctx.clearRect(0,0,W,H);
+  const rows=sortedHold(curYear);
+  const cx=W*0.32, cy=H/2, r=Math.min(150,H/2-20);
+  const palette=["#2ee68a","#4dd6e8","#ffc857","#ff5c5c","#a78bfa","#7ad1a8","#3fa7b8","#c9a227","#8f9c96"];
+  let a0=-Math.PI/2;
+  rows.forEach((h,i)=>{
+    const a1=a0+2*Math.PI*h[1]/100;
+    ctx.beginPath();ctx.arc(cx,cy,r,a0,a1);ctx.arc(cx,cy,r*0.6,a1,a0,true);ctx.closePath();
+    ctx.fillStyle=palette[i%palette.length]; ctx.fill();
+    ctx.strokeStyle="#101614"; ctx.lineWidth=2; ctx.stroke(); a0=a1;
+  });
+  ctx.font="20px monospace";
+  rows.slice(0,6).forEach((h,i)=>{
+    ctx.fillStyle=palette[i%palette.length]; ctx.fillRect(cx+r+50, cy-100+i*32, 18, 18);
+    ctx.fillStyle="#c8d6cf"; ctx.fillText(h[0]+"  "+h[1]+"%", cx+r+80, cy-84+i*32);
+  });
+  if(rows.length>6){
+    const rest=rows.slice(6).reduce((a,h)=>a+h[1],0);
+    ctx.fillStyle="#5f7268"; ctx.fillText("+ "+(rows.length-6)+" more  "+rest+"%", cx+r+80, cy-84+6*32);
+  }
+  ctx.fillStyle="#e8f4ee"; ctx.font="bold 26px monospace";
+  ctx.fillText(curYear, cx-32, cy+9);
+}
+
+/* ================= TURNOVER ================= */
+const turn = YEARS.map((yr,i)=>{
+  if(i===0) return {yr, added:null, dropped:null, kept:null, n:Object.keys(HOLD[yr]).length};
+  const prev=new Set(Object.keys(HOLD[YEARS[i-1]])), now=Object.keys(HOLD[yr]);
+  const added=now.filter(t=>!prev.has(t));
+  const dropped=[...prev].filter(t=>!HOLD[yr][t]);
+  return {yr, added, dropped, kept:now.length-added.length, n:now.length};
+});
+$("turnTable").innerHTML =
+ "<tr><th>Rebalance</th><th>Names</th><th>Carried Over</th><th>Added</th><th>Dropped</th><th>Turnover</th></tr>"+
+ turn.map(t=> t.added===null
+   ? `<tr><td>${t.yr}</td><td>${t.n}</td><td colspan="4" style="text-align:left;color:var(--dim)">first year of the study</td></tr>`
+   : `<tr><td>${t.yr}</td><td>${t.n}</td><td>${t.kept}</td>`+
+     `<td class="${t.added.length?'pos':''}">${t.added.length?'+'+t.added.length:'0'}</td>`+
+     `<td class="${t.dropped.length?'neg':''}">${t.dropped.length?'−'+t.dropped.length:'0'}</td>`+
+     `<td>${Math.round(t.added.length/t.n*100)}%</td></tr>`).join("");
+function drawTurn(){
+  const cv=$("turnBar"), ctx=cv.getContext("2d");
+  const W=cv.width=cv.clientWidth*2, H=cv.height=460; cv.style.height="230px";
+  ctx.clearRect(0,0,W,H);
+  const rows=turn.slice(1);
+  const L=70,R=W-40,T=45,B=H-60;
+  const maxN=Math.max(...rows.map(t=>Math.max(t.added.length,t.dropped.length)));
+  const slot=(R-L)/rows.length, bw=slot/3;
+  ctx.font="20px monospace";
+  rows.forEach((t,i)=>{
+    const x=L+slot*i+slot/2;
+    const hA=(B-T)*t.added.length/maxN, hD=(B-T)*t.dropped.length/maxN;
+    ctx.fillStyle="#2ee68a"; ctx.fillRect(x-bw-4,B-hA,bw,hA);
+    ctx.fillStyle="#ff5c5c"; ctx.fillRect(x+4,B-hD,bw,hD);
+    ctx.fillStyle="#e8f4ee";
+    ctx.fillText(t.added.length, x-bw+2, B-hA-10);
+    ctx.fillText(t.dropped.length, x+bw/2+2, B-hD-10);
+    ctx.fillStyle="#5f7268"; ctx.fillText(t.yr, x-26, H-20);
+  });
+  ctx.fillStyle="#5f7268"; ctx.fillText("names added (green) vs dropped (red) at each annual rebalance", L, 26);
+}
+
+/* ================= CONCENTRATION ================= */
+(function(){
+  const yrs=[2023,2024,2025];
+  $("concTable").innerHTML =
+   "<tr><th>Year</th><th>Largest contributor</th><th>Weight</th><th>Its return</th><th>Its contribution</th><th>Portfolio</th><th>Without it</th></tr>"+
+   yrs.map(yr=>{
+     const i=YEARS.indexOf(yr), b=CONTRIB[yr].best[0], ex=RET.KEFCAP[i]-b[3];
+     return `<tr><td>${yr}</td><td style="text-align:left">${b[0]}</td><td>${b[1]}%</td>`+
+       `<td class="pos">${sgn(b[2],1)}</td><td class="pos">+${b[3].toFixed(2)} pp</td>`+
+       `<td class="${cls(RET.KEFCAP[i])}">${sgn(RET.KEFCAP[i])}</td>`+
+       `<td class="${cls(ex)}">${sgn(ex)}</td></tr>`;
+   }).join("");
+  $("concNote").textContent =
+   "AVGO carries the last three years. The screen sized it at 8% in 2024 because it cleared more of the quality tests than anything else that year, and it returned 116.5%. Strip that single position out of 2023, 2024 and 2025 and the six-year result lands at or below SCHD rather than above it. The \"without it\" column is arithmetic — it removes the contribution without redistributing the weight — so read it as a scale check, not a restated backtest.";
+})();
+
+/* ================= WHAT THE CORRECTION COST ================= */
+(function(){
+  const wasSeries=(()=>{let v=10000,o=[v];WAS.byYear.forEach(r=>{v*=1+r/100;o.push(v)});return o;})();
+  const nowSeries=series(RET.KEFCAP);
+  $("fixTable").innerHTML =
+   "<tr><th>Year</th><th>Before correction</th><th>After correction</th><th>Difference</th></tr>"+
+   YEARS.map((yr,i)=>{
+     const a=WAS.byYear[i], b=RET.KEFCAP[i], d=b-a;
+     return `<tr><td>${yr}</td><td class="${cls(a)}">${sgn(a)}</td><td class="${cls(b)}">${sgn(b)}</td><td class="${cls(d)}">${sgn(d)}</td></tr>`;
+   }).join("")+
+   `<tr><td><b>Annualized</b></td><td><b>${sgn(WAS.cagr)}</b></td><td><b>${sgn(cagr(RET.KEFCAP))}</b></td>`+
+   `<td class="neg"><b>${sgn(cagr(RET.KEFCAP)-WAS.cagr)}</b></td></tr>`+
+   `<tr><td><b>$10,000 becomes</b></td><td><b>${fmt$(WAS.tenk)}</b></td><td><b>${fmt$(nowSeries[6])}</b></td>`+
+   `<td class="neg"><b>−${fmt$(WAS.tenk-nowSeries[6]).replace("$","$")}</b></td></tr>`;
+  $("fixNote").textContent =
+   "The first version of this study picked, for each year, the holdings filing closest to January 1 — which for four of the five data sources landed one to two months INTO the year being measured. The portfolio was being scored over a window that started before it could have been built. Rebuilding it from filings dated on or before December 31 of the prior year removed that advantage. Most of the cost sits in 2022, where the honest number is "+sgn(RET.KEFCAP[2])+" rather than "+sgn(WAS.byYear[2])+". Everything on this page is the corrected version.";
+})();
+
+/* ================= INIT ================= */
+function renderAll(){
+  rebuild();
+  renderCards();
+  drawGrowth();
+  renderSummary();
+  renderIncome();
+  renderYearTable();
+  renderYear();
+  $("dialNote").textContent = mode==="reinvest"
+    ? "Pick the year the money goes in — the cards, the curve and the basket below all move to that window. 2020 is the full run. Dividends are being reinvested; switch to \"withdrawn as income\" to see the retirement view."
+    : "Income view: nothing is ever sold, and every dividend is taken out and spent. The curve shows what's left of the capital, and the income section shows the cash it paid.";
+}
+drawBars();
+drawTurn();
+renderAll();
+window.addEventListener("resize",()=>{drawGrowth();drawBars();drawDonut();drawTurn();renderIncome();});
+</script>
+</body>
+</html>
