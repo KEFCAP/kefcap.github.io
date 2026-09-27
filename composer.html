@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KEFCAP // Composer Dashboard — Roth IRA</title>
+<style>
+:root{
+  --bg:#0a0e0d; --panel:#101614; --panel2:#0d1210; --border:#1e2a25;
+  --grid:#16211c; --text:#c8d6cf; --dim:#5f7268; --green:#2ee68a; --red:#ff5c5c;
+  --amber:#ffc857; --cyan:#4dd6e8; --font:'SF Mono','Menlo','Consolas','Courier New',monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;padding:24px 28px 60px}
+h1{font-size:18px;letter-spacing:2px;color:#e8f4ee}
+h2{font-size:13px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin:38px 0 14px;border-bottom:1px solid var(--border);padding-bottom:8px}
+.sub{color:var(--dim);font-size:11px;margin-top:4px;letter-spacing:1px}
+.pos{color:var(--green)} .neg{color:var(--red)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:18px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:14px 16px}
+.card .lbl{font-size:10px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase}
+.card .val{font-size:21px;margin-top:6px;color:#e8f4ee}
+.card .val.sm{font-size:17px}
+.card .note{font-size:10px;color:var(--dim);margin-top:4px}
+.how{background:var(--panel2);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:6px;padding:14px 18px;margin-top:22px;font-size:11.5px;line-height:1.7;color:#9db3a8}
+.how b{color:var(--text)}
+.rangebar{display:flex;gap:6px;margin:12px 0}
+.rangebar button{background:var(--panel);border:1px solid var(--border);color:var(--dim);font-family:var(--font);font-size:11px;padding:5px 11px;border-radius:4px;cursor:pointer}
+.rangebar button.on{background:var(--green);color:#04120b;border-color:var(--green);font-weight:bold}
+.chartwrap{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:16px}
+canvas{display:block;width:100%}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+th{font-size:10px;letter-spacing:1px;color:var(--dim);text-transform:uppercase;text-align:right;padding:8px 10px;border-bottom:1px solid var(--border)}
+td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--grid)}
+th:first-child,td:first-child{text-align:left}
+.legend{font-size:11px;color:var(--dim);margin-top:8px}
+.legend .sw{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:-1px;margin-right:5px}
+.flex2{display:grid;grid-template-columns:1.4fr 1fr;gap:14px}
+@media(max-width:900px){.flex2{grid-template-columns:1fr}}
+.log{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:6px 16px;max-height:320px;overflow-y:auto}
+.log .row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--grid);font-size:11.5px}
+.log .row:last-child{border-bottom:none}
+.badge{display:inline-block;font-size:9px;letter-spacing:1px;padding:2px 7px;border-radius:3px;background:#123024;color:var(--green);margin-left:8px;vertical-align:2px}
+.tip{position:absolute;pointer-events:none;background:#04120bee;border:1px solid var(--green);border-radius:4px;padding:6px 9px;font-size:11px;color:#e8f4ee;display:none;z-index:9}
+</style>
+</head>
+<body>
+
+<h1>KEFCAP // COMPOSER DASHBOARD <span class="badge">ROTH IRA</span></h1>
+<div class="sub" id="stamp">DATA AS OF —</div>
+
+<div class="cards" id="heroCards"></div>
+
+<div class="how">
+<b>HOW IT WORKS</b> — This dashboard tracks the Composer "Roth IRA" account starting <b>Aug 1, 2026</b>; all earlier history is excluded by design. The performance line is the <b>time-weighted return (TWR)</b>, which strips out the effect of weekly deposits — it measures how well the strategies traded, not how much cash went in. Portfolio value, by contrast, grows with both returns and deposits. Returns are benchmarked against <b>SPY</b> and <b>QQQ</b> over the same dates. The range buttons (1W … ALL) reslice the chart <i>and</i> the period-stats table beneath it, which shows cumulative return, max drawdown, and annualized Sharpe (mean ÷ stdev of daily returns × √252, risk-free 0%) for all three over exactly that window. Because the tracking window starts Aug 1, 2026, ranges longer than the available history clamp to that start and will show identical numbers until more history accumulates. Symphony stats (return, Sharpe, drawdown) come from Composer's deposit-adjusted per-symphony series. Risk metrics (Sharpe, max drawdown, std dev) are Composer's all-time account metrics. On this refresh the chart and period stats run through <b>2026-09-25</b>, the most recent trading day — 27 September is a Saturday. All three lines cover identical trading days, and the portfolio value, latest move and risk metrics in the cards above are live as of the 2026-09-27 pull.
+</div>
+
+<h2>Performance — Time-Weighted Return vs SPY &amp; QQQ</h2>
+<div class="chartwrap">
+  <div class="rangebar" id="rangebar"></div>
+  <div style="position:relative">
+    <canvas id="perf" height="340"></canvas>
+    <div class="tip" id="tip"></div>
+  </div>
+  <div class="legend">
+    <span><span class="sw" style="background:var(--green)"></span>Portfolio TWR (rebased to range start)</span>
+    &nbsp;&nbsp;<span><span class="sw" style="background:var(--cyan)"></span>SPY (rebased)</span>
+    &nbsp;&nbsp;<span><span class="sw" style="background:var(--amber)"></span>QQQ (rebased)</span>
+  </div>
+  <table id="periodTable"></table>
+  <div class="legend" id="periodNote"></div>
+</div>
+
+<h2>Symphony Breakdown</h2>
+<div class="flex2">
+  <div class="chartwrap" style="padding:6px 16px 16px">
+    <table id="symTable"></table>
+  </div>
+  <div class="chartwrap"><canvas id="symBar" height="220"></canvas></div>
+</div>
+
+<h2>Symphony Monthly Rank</h2>
+<div class="sub" style="margin-bottom:10px">Ranked by each calendar month's deposit-adjusted return. Only one symphony is currently active, so it holds rank #1 — the table still shows how each month performed.</div>
+<div class="flex2">
+  <div class="chartwrap" style="padding:6px 16px 16px"><table id="rankMTable"></table></div>
+  <div class="chartwrap"><canvas id="bumpM" height="220"></canvas></div>
+</div>
+
+<h2>Symphony Cumulative Rank</h2>
+<div class="sub" style="margin-bottom:10px">Ranked by cumulative return since the Aug 1, 2026 window start, as of each month end. Rank change vs prior month in parentheses.</div>
+<div class="flex2">
+  <div class="chartwrap" style="padding:6px 16px 16px"><table id="rankCTable"></table></div>
+  <div class="chartwrap"><canvas id="bumpC" height="220"></canvas></div>
+</div>
+
+<h2>Holdings</h2>
+<div class="flex2">
+  <div class="chartwrap" style="padding:6px 16px 16px"><table id="holdTable"></table></div>
+  <div class="chartwrap"><canvas id="donut" height="220"></canvas></div>
+</div>
+
+<h2>Activity Log</h2>
+<div class="log" id="log"></div>
+
+<script>
+/* ================= EMBEDDED DATA (refreshed 2026-09-27) ================= */
+/* Portfolio series + benchmarks run through 2026-09-25, the most recent trading day
+   (27 September is a Saturday). Portfolio value, today's move and the account risk
+   metrics below are live as of the 2026-09-27 pull. */
+const ASOF = "2026-09-25";
+const LIVEDATE = "2026-09-27";
+
+const TOT = { pv:9431.21, nd:9447.65, sharpe:0.37, mdd:-35.05, sd:37.55,
+  todayPct:1.30, todayDol:120.73, cash:9.50, unalloc:0.00,
+  sinceAug:22.91, spyAug:3.26, qqqAug:8.21 };
+
+/* RAW: yymmdd,portfolioValue,cumTWR% */
+/* Window starts 2026-08-01 per Kenny (2026-08-16). First point (260731) is the rebase anchor only. */
+const RAW = "260731,6486.24,-0.9365|260803,6986.16,4.1245|260804,7673.76,14.3727|260805,7470.89,11.3490|260806,7387.90,10.1121|260807,7637.90,13.8382|260810,7734.25,12.8258|260811,7658.71,11.7238|260812,7819.98,14.0764|260813,8087.03,17.9720|260814,8049.33,17.4220|260817,8173.48,16.8318|260818,7768.21,11.0388|260819,7719.38,10.3409|260820,7550.29,7.9240|260821,7624.14,8.9795|260824,7557.98,5.7120|260825,7692.82,7.5980|260826,7714.22,7.8973|260827,8017.08,12.1334|260828,7861.91,9.9630|260831,8034.40,10.0667|260901,7737.96,6.0056|260902,7786.12,6.6654|260903,8046.70,10.2352|260904,8084.64,10.7550|260908,8226.21,10.4369|260909,8158.46,9.5274|260910,7891.91,5.9490|260911,8093.53,8.6557|260914,8063.74,6.0711|260915,7908.06,4.0232|260916,7911.55,4.0691|260917,8312.95,9.3492|260918,8459.55,11.2776|260921,9354.07,20.7675|260922,9576.92,23.6446|260923,9320.07,20.3285|260924,9310.48,20.2047|260925,9431.21,21.7635";
+
+/* SPYRAW: yymmdd,close — same trading days */
+const SPYRAW = "260731,747.03|260803,757.67|260804,771.33|260805,769.79|260806,768.56|260807,773.26|260810,773.03|260811,770.56|260812,772.49|260813,777.88|260814,776.34|260817,772.67|260818,767.45|260819,769.06|260820,762.60|260821,765.72|260824,763.47|260825,765.91|260826,766.08|260827,771.10|260828,769.35|260831,767.05|260901,761.78|260902,765.16|260903,773.17|260904,770.19|260908,765.96|260909,762.40|260910,757.83|260911,764.29|260914,760.88|260915,757.39|260916,754.05|260917,762.60|260918,761.69|260921,773.50|260922,773.38|260923,767.81|260924,767.18|260925,771.35";
+
+/* QQQRAW: yymmdd,close — same trading days */
+const QQQRAW = "260731,687.99|260803,700.07|260804,723.85|260805,717.30|260806,714.65|260807,723.03|260810,720.87|260811,718.45|260812,723.70|260813,732.07|260814,731.07|260817,729.87|260818,717.51|260819,716.08|260820,710.93|260821,713.44|260824,706.32|260825,710.72|260826,711.37|260827,721.11|260828,716.43|260831,716.76|260901,707.64|260902,709.24|260903,717.67|260904,718.96|260908,718.36|260909,716.31|260910,708.69|260911,714.88|260914,709.18|260915,704.54|260916,704.72|260917,716.92|260918,721.45|260921,741.47|260922,747.46|260923,741.21|260924,741.10|260925,744.50";
+
+/* Active symphonies */
+const syms = [
+  { name:"KEFCAP TQQQ Long (Buy Copy) (Buy Copy)", value:9431.34, netDep:9028.98, twr:58.42, ann:160.01,
+    sharpe:1.87, mdd:-29.51, sd:61.59, invested:"2026-04-07", lastRebalance:"2026-09-22",
+    todayDol:120.73, holdings:[{t:"TQQQ",a:99.90,v:9421.72}] }
+];
+
+/* Monthly + cumulative ranks (deposit-adjusted). retM = month return %, retC = cumulative % as of month end */
+/* Only one symphony is held and no per-symphony deposit-adjusted series was returned, so retM/retC use the
+   account-level windowed TWR (since 2026-08-01) as the symphony's return. */
+const RK = [
+  { m:"2026-08", rows:[{name:syms[0].name, retM:11.11, rankM:1, retC:11.11, rankC:1, chg:0}] },
+  { m:"2026-09 (MTD)", rows:[{name:syms[0].name, retM:10.63, rankM:1, retC:22.91, rankC:1, chg:0}] }
+];
+
+/* Aggregated holdings */
+const holds = [
+  { t:"TQQQ", name:"ProShares UltraPro QQQ", alloc:99.90, nSym:1, value:9421.72 },
+  { t:"CASH", name:"Unallocated / sweep cash", alloc:0.10, nSym:0, value:9.50 }
+];
+
+/* Activity log (newest first). Deposits are the real ACH records from Composer's
+   cash endpoint on this pull — eight completed weekly transfers since 2026-08-01. */
+const ach = [
+  ["2026-09-22","Rebalance — KEFCAP TQQQ Long (daily)","REBAL"],
+  ["2026-09-21","Deposit $165.00 (recurring weekly)","DEP"],
+  ["2026-09-14","Deposit $165.00 (recurring weekly)","DEP"],
+  ["2026-09-07","Deposit $165.00 (recurring weekly)","DEP"],
+  ["2026-08-31","Deposit $165.00 (recurring weekly)","DEP"],
+  ["2026-08-24","Deposit $165.00 (recurring weekly)","DEP"],
+  ["2026-08-17","Deposit $165.00 (recurring weekly)","DEP"],
+  ["2026-08-10","Deposit $165.00 (recurring weekly)","DEP"],
+  ["2026-08-03","Deposit $165.00 (recurring weekly)","DEP"],
+  ["2026-08-01","Dashboard tracking window begins","START"]
+];
+
+/* ================= RENDER ================= */
+const $ = id => document.getElementById(id);
+const fmt$ = x => "$"+x.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const sgn = (x,d=2) => (x>=0?"+":"")+x.toFixed(d)+"%";
+const cls = x => x>=0?"pos":"neg";
+
+$("stamp").textContent = "SERIES THROUGH "+ASOF+" · LIVE VALUES AS OF "+LIVEDATE+" · SOURCE: COMPOSER (LIVE SCRAPE) · WINDOW STARTS 2026-08-01";
+
+$("heroCards").innerHTML = [
+ ["PORTFOLIO VALUE", fmt$(TOT.pv), "", "net deposits "+fmt$(TOT.nd)],
+ ["LAST SESSION ("+ASOF+")", sgn(TOT.todayPct), cls(TOT.todayPct), ((TOT.todayDol>=0?"+":"-")+fmt$(Math.abs(TOT.todayDol)))+" · market closed "+LIVEDATE],
+ ["SINCE AUG 1, 2026", sgn(TOT.sinceAug), cls(TOT.sinceAug), "SPY "+sgn(TOT.spyAug)+" · QQQ "+sgn(TOT.qqqAug)+" · thru "+ASOF],
+ ["SHARPE RATIO", TOT.sharpe.toFixed(2), "", "all-time, Composer metric"],
+ ["MAX DRAWDOWN", TOT.mdd.toFixed(2)+"%", "neg", "std dev "+TOT.sd.toFixed(1)+"%"],
+ ["CASH", fmt$(TOT.cash), "", "unallocated "+fmt$(TOT.unalloc)]
+].map(c=>`<div class="card"><div class="lbl">${c[0]}</div><div class="val ${c[2]}">${c[1]}</div><div class="note">${c[3]}</div></div>`).join("");
+
+/* parse series */
+function parse(raw, three){
+  return raw.split("|").map(s=>{const p=s.split(",");
+    const dt=new Date(Date.UTC(2000+ +p[0].slice(0,2), +p[0].slice(2,4)-1, +p[0].slice(4,6)));
+    return three? {d:dt, v:+p[1], c:+p[2]} : {d:dt, v:+p[1]};});
+}
+const HIST = parse(RAW,true), SPY = parse(SPYRAW,false), QQQ = parse(QQQRAW,false);
+
+/* range buttons */
+const ranges=[["1W",7],["1M",30],["3M",91],["6M",182],["1Y",365],["3Y",1095],["5Y",1825],["10Y",3650],["ALL",99999]];
+let curRange="ALL";
+$("rangebar").innerHTML = ranges.map(r=>`<button data-r="${r[0]}" class="${r[0]===curRange?'on':''}">${r[0]}</button>`).join("");
+$("rangebar").onclick = e=>{ if(e.target.dataset.r){curRange=e.target.dataset.r;
+  [...$("rangebar").children].forEach(b=>b.classList.toggle("on",b.dataset.r===curRange)); drawPerf();} };
+
+let perfPts=[];
+function drawPerf(){
+  const cv=$("perf"), ctx=cv.getContext("2d");
+  const W=cv.width=cv.clientWidth*2, Hh=cv.height=680; cv.style.height="340px"; ctx.scale(1,1);
+  ctx.clearRect(0,0,W,Hh);
+  const days=ranges.find(r=>r[0]===curRange)[1];
+  const end=HIST[HIST.length-1].d, start=new Date(end.getTime()-days*86400000);
+  let hs=HIST.filter(p=>p.d>=start); if(hs.length<2) hs=HIST.slice(-2);
+  const anchorIdx=Math.max(0,HIST.indexOf(hs[0])-1);
+  const anchor=HIST[anchorIdx];
+  const seq=HIST.slice(anchorIdx);
+  const twr=seq.map(p=>((1+p.c/100)/(1+anchor.c/100)-1)*100);
+  const spySeq=SPY.slice(anchorIdx);
+  const spy0=spySeq[0].v;
+  const spy=spySeq.map(p=>(p.v/spy0-1)*100);
+  const qqqSeq=QQQ.slice(anchorIdx);
+  const qqq0=qqqSeq[0].v;
+  const qqq=qqqSeq.map(p=>(p.v/qqq0-1)*100);
+  const all=[...twr,...spy,...qqq];
+  let lo=Math.min(...all), hi=Math.max(...all); const pad=(hi-lo)*0.1||1; lo-=pad; hi+=pad;
+  const L=70,R=W-20,T=20,B=Hh-50;
+  const X=i=>L+(R-L)*i/(seq.length-1), Y=v=>B-(B-T)*(v-lo)/(hi-lo);
+  ctx.strokeStyle="#16211c"; ctx.fillStyle="#5f7268"; ctx.font="20px monospace"; ctx.lineWidth=1;
+  const steps=6;
+  for(let i=0;i<=steps;i++){const v=lo+(hi-lo)*i/steps, y=Y(v);
+    ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();
+    ctx.fillText(v.toFixed(1)+"%",4,y+6);}
+  const nlab=Math.min(7,seq.length);
+  for(let i=0;i<nlab;i++){const idx=Math.round(i*(seq.length-1)/(nlab-1));
+    const d=seq[idx].d, lab=(d.getUTCMonth()+1)+"/"+d.getUTCDate()+"/"+String(d.getUTCFullYear()).slice(2);
+    ctx.fillText(lab, Math.min(X(idx)-30,W-110), Hh-15);}
+  if(lo<0&&hi>0){ctx.strokeStyle="#2a3a33";ctx.setLineDash([6,6]);ctx.beginPath();ctx.moveTo(L,Y(0));ctx.lineTo(R,Y(0));ctx.stroke();ctx.setLineDash([]);}
+  function line(arr,color,w){ctx.strokeStyle=color;ctx.lineWidth=w;ctx.beginPath();
+    arr.forEach((v,i)=>{i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v));});ctx.stroke();}
+  line(qqq,"#ffc857",2.5);
+  line(spy,"#4dd6e8",2.5);
+  line(twr,"#2ee68a",4);
+  /* endpoint labels */
+  ctx.font="bold 22px monospace";
+  ctx.fillStyle="#2ee68a"; ctx.fillText(sgn(twr[twr.length-1]), R-130, Y(twr[twr.length-1])-10);
+  ctx.fillStyle="#4dd6e8"; ctx.fillText(sgn(spy[spy.length-1]), R-130, Y(spy[spy.length-1])+28);
+  ctx.fillStyle="#ffc857"; ctx.fillText(sgn(qqq[qqq.length-1]), R-260, Y(qqq[qqq.length-1])+28);
+  perfPts={seq,twr,spy,qqq,X,Y,L,R};
+  drawPeriodStats(seq,twr,spy,qqq);
+}
+
+/* ---- period statistics: cumulative return, max drawdown, annualized Sharpe ---- */
+/* levels[] are cumulative % values rebased to 0 at the range anchor. */
+function periodStats(levels){
+  const idx = levels.map(v=>1+v/100);
+  const cum = (idx[idx.length-1]/idx[0]-1)*100;
+  let peak = idx[0], mdd = 0;
+  for(const v of idx){ if(v>peak) peak=v; const dd=v/peak-1; if(dd<mdd) mdd=dd; }
+  const rets=[]; for(let i=1;i<idx.length;i++) rets.push(idx[i]/idx[i-1]-1);
+  let sharpe=null;
+  if(rets.length>1){
+    const m=rets.reduce((a,b)=>a+b,0)/rets.length;
+    const sd=Math.sqrt(rets.reduce((a,b)=>a+(b-m)*(b-m),0)/(rets.length-1));
+    sharpe = sd>0 ? (m/sd)*Math.sqrt(252) : null;
+  }
+  return {cum, mdd:mdd*100, sharpe, n:rets.length};
+}
+
+function drawPeriodStats(seq,twr,spy,qqq){
+  const rows=[["Roth IRA (TWR)",twr,"var(--green)"],["SPY",spy,"var(--cyan)"],["QQQ",qqq,"var(--amber)"]];
+  const s0=seq[0].d.toISOString().slice(0,10), s1=seq[seq.length-1].d.toISOString().slice(0,10);
+  $("periodTable").innerHTML =
+    "<tr><th>"+curRange+" — Period Stats</th><th>Cumulative Return</th><th>Max Drawdown</th><th>Sharpe (ann.)</th></tr>"+
+    rows.map(r=>{
+      const st=periodStats(r[1]);
+      return `<tr><td><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${r[2]};margin-right:7px"></span>${r[0]}</td>`+
+        `<td class="${cls(st.cum)}">${sgn(st.cum)}</td>`+
+        `<td class="neg">${st.mdd.toFixed(2)}%</td>`+
+        `<td>${st.sharpe===null?"—":st.sharpe.toFixed(2)}</td></tr>`;
+    }).join("");
+  $("periodNote").textContent =
+    "Window "+s0+" → "+s1+" ("+(seq.length-1)+" trading days). Returns rebased to the range start; drawdown measured within the range; Sharpe = mean/stdev of daily returns × √252, risk-free 0%.";
+}
+drawPerf();
+window.addEventListener("resize",drawPerf);
+$("perf").addEventListener("mousemove",e=>{
+  const r=$("perf").getBoundingClientRect(), x=(e.clientX-r.left)*2;
+  const {seq,twr,spy,qqq,L,R}=perfPts; if(!seq)return;
+  let i=Math.round((x-L)/(R-L)*(seq.length-1)); i=Math.max(0,Math.min(seq.length-1,i));
+  const p=seq[i], tip=$("tip");
+  tip.style.display="block";
+  tip.style.left=Math.min(e.clientX-r.left+14, r.width-190)+"px";
+  tip.style.top=(e.clientY-r.top-70)+"px";
+  tip.innerHTML=p.d.toISOString().slice(0,10)+"<br>TWR <b class='"+cls(twr[i])+"'>"+sgn(twr[i])+"</b><br>SPY "+sgn(spy[i])+" · QQQ "+sgn(qqq[i])+"<br>Value "+fmt$(p.v);
+});
+$("perf").addEventListener("mouseleave",()=>$("tip").style.display="none");
+
+/* symphony table */
+$("symTable").innerHTML = "<tr><th>Symphony</th><th>Value</th><th>Net Dep</th><th>Cum Ret</th><th>Ann</th><th>Sharpe</th><th>Max DD</th><th>Today</th><th>Since</th></tr>"+
+ syms.map(s=>`<tr><td>${s.name}</td><td>${fmt$(s.value)}</td><td>${fmt$(s.netDep)}</td>
+ <td class="${cls(s.twr)}">${sgn(s.twr)}</td><td class="${cls(s.ann)}">${sgn(s.ann,0)}</td>
+ <td>${s.sharpe.toFixed(2)}</td><td class="neg">${s.mdd.toFixed(1)}%</td>
+ <td class="${cls(s.todayDol)}">${(s.todayDol>=0?"+":"")+fmt$(Math.abs(s.todayDol))}</td><td>${s.invested}</td></tr>`).join("");
+
+/* symphony bar chart (value by symphony) */
+(function(){
+  const cv=$("symBar"),ctx=cv.getContext("2d");
+  const W=cv.width=cv.clientWidth*2,H=cv.height=440;cv.style.height="220px";
+  ctx.font="20px monospace";
+  const max=Math.max(...syms.map(s=>s.value));
+  syms.forEach((s,i)=>{
+    const y=60+i*70, w=(W-260)*s.value/max;
+    ctx.fillStyle="#2ee68a"; ctx.fillRect(30,y,w,34);
+    ctx.fillStyle="#c8d6cf"; ctx.fillText(s.name.slice(0,28), 30, y-10);
+    ctx.fillStyle="#e8f4ee"; ctx.fillText(fmt$(s.value), 40+w, y+24);
+  });
+  ctx.fillStyle="#5f7268"; ctx.fillText("Current value by symphony", 30, H-18);
+})();
+
+/* rank tables */
+$("rankMTable").innerHTML = "<tr><th>Month</th><th>Symphony</th><th>Return</th><th>Rank</th></tr>"+
+ RK.map(b=>b.rows.map(r=>`<tr><td>${b.m}</td><td>${r.name.slice(0,26)}</td><td class="${cls(r.retM)}">${sgn(r.retM)}</td><td>#${r.rankM}</td></tr>`).join("")).join("");
+$("rankCTable").innerHTML = "<tr><th>As of</th><th>Symphony</th><th>Cum Return</th><th>Rank (chg)</th></tr>"+
+ RK.map(b=>b.rows.map(r=>`<tr><td>${b.m}</td><td>${r.name.slice(0,26)}</td><td class="${cls(r.retC)}">${sgn(r.retC)}</td><td>#${r.rankC} (${r.chg>0?"▲"+r.chg:r.chg<0?"▼"+(-r.chg):"—"})</td></tr>`).join("")).join("");
+
+/* bump charts: with one symphony, draw its month-return path (monthly) and cum-return path */
+function bump(id, vals, labels, color, title){
+  const cv=$(id),ctx=cv.getContext("2d");
+  const W=cv.width=cv.clientWidth*2,H=cv.height=440;cv.style.height="220px";
+  const L=80,R=W-40,T=50,B=H-70;
+  let lo=Math.min(...vals,0),hi=Math.max(...vals,0);const pad=(hi-lo)*.15||1;lo-=pad;hi+=pad;
+  const X=i=>vals.length>1? L+(R-L)*i/(vals.length-1) : (L+R)/2, Y=v=>B-(B-T)*(v-lo)/(hi-lo);
+  ctx.font="20px monospace";ctx.strokeStyle="#16211c";
+  for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4,y=Y(v);ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();ctx.fillStyle="#5f7268";ctx.fillText(v.toFixed(0)+"%",8,y+6);}
+  if(lo<0&&hi>0){ctx.strokeStyle="#2a3a33";ctx.setLineDash([6,6]);ctx.beginPath();ctx.moveTo(L,Y(0));ctx.lineTo(R,Y(0));ctx.stroke();ctx.setLineDash([]);}
+  ctx.strokeStyle=color;ctx.lineWidth=4;ctx.beginPath();
+  vals.forEach((v,i)=>{i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v));});ctx.stroke();
+  vals.forEach((v,i)=>{ctx.fillStyle=color;ctx.beginPath();ctx.arc(X(i),Y(v),7,0,7);ctx.fill();
+    ctx.fillStyle="#e8f4ee";ctx.fillText((v>=0?"+":"")+v.toFixed(1)+"%",X(i)-35,Y(v)-16);
+    ctx.fillStyle="#5f7268";ctx.fillText(labels[i],X(i)-30,H-24);});
+  ctx.fillStyle="#5f7268";ctx.fillText(title,L,26);
+}
+bump("bumpM", RK.map(b=>b.rows[0].retM), RK.map(b=>b.m.slice(2,7)), "#2ee68a", "Monthly return — "+syms[0].name.slice(0,24));
+bump("bumpC", RK.map(b=>b.rows[0].retC), RK.map(b=>b.m.slice(2,7)), "#ffc857", "Cumulative return at month end");
+
+/* holdings */
+$("holdTable").innerHTML = "<tr><th>Ticker</th><th>Name</th><th>Alloc</th><th># Sym</th><th>Value</th></tr>"+
+ holds.map(h=>`<tr><td><b>${h.t}</b></td><td style="text-align:left;color:var(--dim)">${h.name}</td><td>${h.alloc.toFixed(2)}%</td><td>${h.nSym}</td><td>${fmt$(h.value)}</td></tr>`).join("");
+
+(function(){
+  const cv=$("donut"),ctx=cv.getContext("2d");
+  const W=cv.width=cv.clientWidth*2,H=cv.height=440;cv.style.height="220px";
+  const cx=W/2-120,cy=H/2,r=150,colors=["#2ee68a","#4dd6e8","#ffc857","#ff5c5c","#a78bfa"];
+  const total=holds.reduce((a,h)=>a+h.value,0);let a0=-Math.PI/2;
+  holds.forEach((h,i)=>{const a1=a0+2*Math.PI*h.value/total;
+    ctx.beginPath();ctx.arc(cx,cy,r,a0,a1);ctx.arc(cx,cy,r*0.62,a1,a0,true);ctx.closePath();
+    ctx.fillStyle=colors[i%5];ctx.fill();a0=a1;});
+  ctx.font="20px monospace";
+  holds.forEach((h,i)=>{ctx.fillStyle=colors[i%5];ctx.fillRect(cx+r+50,cy-40+i*44,20,20);
+    ctx.fillStyle="#c8d6cf";ctx.fillText(h.t+" "+h.alloc.toFixed(1)+"%",cx+r+80,cy-23+i*44);});
+  ctx.fillStyle="#e8f4ee";ctx.font="bold 26px monospace";
+  ctx.fillText(fmt$(total),cx-70,cy+8);
+})();
+
+/* activity log */
+$("log").innerHTML = ach.map(a=>{
+  const col = a[2]==="REBAL"?"var(--cyan)":a[2]==="START"?"var(--amber)":"var(--green)";
+  return `<div class="row"><span style="color:var(--dim)">${a[0]}</span><span>${a[1]}</span><span style="color:${col}">${a[2]}</span></div>`;
+}).join("");
+</script>
+</body>
+</html>
