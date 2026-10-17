@@ -52,7 +52,7 @@ th:first-child,td:first-child{text-align:left}
 <div class="cards" id="heroCards"></div>
 
 <div class="how">
-<b>HOW IT WORKS</b> — This dashboard tracks the Composer "Roth IRA" account starting <b>Aug 1, 2026</b>; all earlier history is excluded by design. The performance line is the <b>time-weighted return (TWR)</b>, which strips out the effect of weekly deposits — it measures how well the strategies traded, not how much cash went in. Portfolio value, by contrast, grows with both returns and deposits. Returns are benchmarked against <b>SPY</b> and <b>QQQ</b> over the same dates. The range buttons (1W … ALL) reslice the chart <i>and</i> the period-stats table beneath it, which shows cumulative return, max drawdown, and annualized Sharpe (mean ÷ stdev of daily returns × √252, risk-free 0%) for all three over exactly that window. Because the tracking window starts Aug 1, 2026, ranges longer than the available history clamp to that start and will show identical numbers until more history accumulates. Symphony stats (return, Sharpe, drawdown) come from Composer's deposit-adjusted per-symphony series. Risk metrics (Sharpe, max drawdown, std dev) are Composer's all-time account metrics. On this refresh the chart and period stats run through <b>2026-10-16</b>, the most recent trading day — 17 October is a Saturday. All three lines cover identical trading days, and the portfolio value, latest move and risk metrics in the cards above are live as of the 2026-10-17 pull.
+<b>HOW IT WORKS</b> — This dashboard tracks the Composer "Roth IRA" account starting <b>Aug 1, 2026</b>; all earlier history is excluded by design. The performance line is the <b>time-weighted return (TWR)</b>, which strips out the effect of weekly deposits — it measures how well the strategies traded, not how much cash went in. Portfolio value, by contrast, grows with both returns and deposits. Returns are benchmarked against <b>SPY</b> and <b>QQQ</b> over the same dates. The range buttons (1W … ALL) reslice the chart <i>and</i> the period-stats table beneath it, which shows cumulative return, max drawdown, and annualized Sharpe (mean ÷ stdev of daily returns × √252, risk-free 0%) for all three over exactly that window. Because the tracking window starts Aug 1, 2026, ranges longer than the available history clamp to that start and will show identical numbers until more history accumulates. Risk metrics (Sharpe, max drawdown, std dev) are Composer's all-time account metrics. On this refresh the chart and period stats run through <b>2026-10-16</b>, the most recent trading day — 17 October is a Saturday. All three lines cover identical trading days, and the portfolio value, latest move and risk metrics in the cards above are live as of the 2026-10-17 pull.
 </div>
 
 <h2>Performance — Time-Weighted Return vs SPY &amp; QQQ</h2>
@@ -69,28 +69,6 @@ th:first-child,td:first-child{text-align:left}
   </div>
   <table id="periodTable"></table>
   <div class="legend" id="periodNote"></div>
-</div>
-
-<h2>Symphony Breakdown</h2>
-<div class="flex2">
-  <div class="chartwrap" style="padding:6px 16px 16px">
-    <table id="symTable"></table>
-  </div>
-  <div class="chartwrap"><canvas id="symBar" height="220"></canvas></div>
-</div>
-
-<h2>Symphony Monthly Rank</h2>
-<div class="sub" style="margin-bottom:10px">Ranked by each calendar month's deposit-adjusted return. Only one symphony is currently active, so it holds rank #1 — the table still shows how each month performed.</div>
-<div class="flex2">
-  <div class="chartwrap" style="padding:6px 16px 16px"><table id="rankMTable"></table></div>
-  <div class="chartwrap"><canvas id="bumpM" height="220"></canvas></div>
-</div>
-
-<h2>Symphony Cumulative Rank</h2>
-<div class="sub" style="margin-bottom:10px">Ranked by cumulative return since the Aug 1, 2026 window start, as of each month end. Rank change vs prior month in parentheses.</div>
-<div class="flex2">
-  <div class="chartwrap" style="padding:6px 16px 16px"><table id="rankCTable"></table></div>
-  <div class="chartwrap"><canvas id="bumpC" height="220"></canvas></div>
 </div>
 
 <h2>Holdings</h2>
@@ -287,54 +265,6 @@ $("perf").addEventListener("mousemove",e=>{
   tip.innerHTML=p.d.toISOString().slice(0,10)+"<br>TWR <b class='"+cls(twr[i])+"'>"+sgn(twr[i])+"</b><br>SPY "+sgn(spy[i])+" · QQQ "+sgn(qqq[i])+"<br>Value "+fmt$(p.v);
 });
 $("perf").addEventListener("mouseleave",()=>$("tip").style.display="none");
-
-/* symphony table */
-$("symTable").innerHTML = "<tr><th>Symphony</th><th>Value</th><th>Net Dep</th><th>Cum Ret</th><th>Ann</th><th>Sharpe</th><th>Max DD</th><th>Today</th><th>Since</th></tr>"+
- syms.map(s=>`<tr><td>${s.name}</td><td>${fmt$(s.value)}</td><td>${fmt$(s.netDep)}</td>
- <td class="${cls(s.twr)}">${sgn(s.twr)}</td><td class="${cls(s.ann)}">${sgn(s.ann,0)}</td>
- <td>${s.sharpe.toFixed(2)}</td><td class="neg">${s.mdd.toFixed(1)}%</td>
- <td class="${cls(s.todayDol)}">${(s.todayDol>=0?"+":"-")+fmt$(Math.abs(s.todayDol))}</td><td>${s.invested}</td></tr>`).join("");
-
-/* symphony bar chart (value by symphony) */
-(function(){
-  const cv=$("symBar"),ctx=cv.getContext("2d");
-  const W=cv.width=cv.clientWidth*2,H=cv.height=440;cv.style.height="220px";
-  ctx.font="20px monospace";
-  const max=Math.max(...syms.map(s=>s.value));
-  syms.forEach((s,i)=>{
-    const y=60+i*70, w=(W-260)*s.value/max;
-    ctx.fillStyle="#2ee68a"; ctx.fillRect(30,y,w,34);
-    ctx.fillStyle="#c8d6cf"; ctx.fillText(s.name.slice(0,28), 30, y-10);
-    ctx.fillStyle="#e8f4ee"; ctx.fillText(fmt$(s.value), 40+w, y+24);
-  });
-  ctx.fillStyle="#5f7268"; ctx.fillText("Current value by symphony", 30, H-18);
-})();
-
-/* rank tables */
-$("rankMTable").innerHTML = "<tr><th>Month</th><th>Symphony</th><th>Return</th><th>Rank</th></tr>"+
- RK.map(b=>b.rows.map(r=>`<tr><td>${b.m}</td><td>${r.name.slice(0,26)}</td><td class="${cls(r.retM)}">${sgn(r.retM)}</td><td>#${r.rankM}</td></tr>`).join("")).join("");
-$("rankCTable").innerHTML = "<tr><th>As of</th><th>Symphony</th><th>Cum Return</th><th>Rank (chg)</th></tr>"+
- RK.map(b=>b.rows.map(r=>`<tr><td>${b.m}</td><td>${r.name.slice(0,26)}</td><td class="${cls(r.retC)}">${sgn(r.retC)}</td><td>#${r.rankC} (${r.chg>0?"▲"+r.chg:r.chg<0?"▼"+(-r.chg):"—"})</td></tr>`).join("")).join("");
-
-/* bump charts: with one symphony, draw its month-return path (monthly) and cum-return path */
-function bump(id, vals, labels, color, title){
-  const cv=$(id),ctx=cv.getContext("2d");
-  const W=cv.width=cv.clientWidth*2,H=cv.height=440;cv.style.height="220px";
-  const L=80,R=W-40,T=50,B=H-70;
-  let lo=Math.min(...vals,0),hi=Math.max(...vals,0);const pad=(hi-lo)*.15||1;lo-=pad;hi+=pad;
-  const X=i=>vals.length>1? L+(R-L)*i/(vals.length-1) : (L+R)/2, Y=v=>B-(B-T)*(v-lo)/(hi-lo);
-  ctx.font="20px monospace";ctx.strokeStyle="#16211c";
-  for(let i=0;i<=4;i++){const v=lo+(hi-lo)*i/4,y=Y(v);ctx.beginPath();ctx.moveTo(L,y);ctx.lineTo(R,y);ctx.stroke();ctx.fillStyle="#5f7268";ctx.fillText(v.toFixed(0)+"%",8,y+6);}
-  if(lo<0&&hi>0){ctx.strokeStyle="#2a3a33";ctx.setLineDash([6,6]);ctx.beginPath();ctx.moveTo(L,Y(0));ctx.lineTo(R,Y(0));ctx.stroke();ctx.setLineDash([]);}
-  ctx.strokeStyle=color;ctx.lineWidth=4;ctx.beginPath();
-  vals.forEach((v,i)=>{i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v));});ctx.stroke();
-  vals.forEach((v,i)=>{ctx.fillStyle=color;ctx.beginPath();ctx.arc(X(i),Y(v),7,0,7);ctx.fill();
-    ctx.fillStyle="#e8f4ee";ctx.fillText((v>=0?"+":"")+v.toFixed(1)+"%",X(i)-35,Y(v)-16);
-    ctx.fillStyle="#5f7268";ctx.fillText(labels[i],X(i)-30,H-24);});
-  ctx.fillStyle="#5f7268";ctx.fillText(title,L,26);
-}
-bump("bumpM", RK.map(b=>b.rows[0].retM), RK.map(b=>b.m.slice(2,7)), "#2ee68a", "Monthly return — "+syms[0].name.slice(0,24));
-bump("bumpC", RK.map(b=>b.rows[0].retC), RK.map(b=>b.m.slice(2,7)), "#ffc857", "Cumulative return at month end");
 
 /* holdings */
 $("holdTable").innerHTML = "<tr><th>Ticker</th><th>Name</th><th>Alloc</th><th># Sym</th><th>Value</th></tr>"+
