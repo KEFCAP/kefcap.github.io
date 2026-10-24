@@ -52,7 +52,7 @@ th:first-child,td:first-child{text-align:left}
 <div class="cards" id="heroCards"></div>
 
 <div class="how">
-<b>HOW IT WORKS</b> — This dashboard tracks the Composer "Roth IRA" account starting <b>Aug 1, 2026</b>; all earlier history is excluded by design. The performance line is the <b>time-weighted return (TWR)</b>, which strips out the effect of weekly deposits — it measures how well the strategies traded, not how much cash went in. Portfolio value, by contrast, grows with both returns and deposits. Returns are benchmarked against <b>SPY</b> and <b>QQQ</b> over the same dates. The range buttons (1W … ALL) reslice the chart <i>and</i> the period-stats table beneath it, which shows cumulative return, max drawdown, and annualized Sharpe (mean ÷ stdev of daily returns × √252, risk-free 0%) for all three over exactly that window. Because the tracking window starts Aug 1, 2026, ranges longer than the available history clamp to that start and will show identical numbers until more history accumulates. Risk metrics (Sharpe, max drawdown, std dev) are Composer's all-time account metrics. On this refresh the chart and period stats run through <b>2026-10-16</b>, the most recent trading day — 17 October is a Saturday. All three lines cover identical trading days, and the portfolio value, latest move and risk metrics in the cards above are live as of the 2026-10-17 pull.
+<b>HOW IT WORKS</b> — This dashboard tracks the Composer "Roth IRA" account starting <b>Aug 1, 2026</b>; all earlier history is excluded by design. The performance line is the <b>time-weighted return (TWR)</b>, which strips out the effect of weekly deposits — it measures how well the strategies traded, not how much cash went in. Portfolio value, by contrast, grows with both returns and deposits. Returns are benchmarked against <b>SPY</b> and <b>QQQ</b> over the same dates. The range buttons (1W … ALL) reslice the chart <i>and</i> the period-stats table beneath it, which shows cumulative return, max drawdown, and annualized Sharpe (mean ÷ stdev of daily returns × √252, risk-free 0%) for all three over exactly that window. Because the tracking window starts Aug 1, 2026, ranges longer than the available history clamp to that start and will show identical numbers until more history accumulates. Risk metrics (Sharpe, max drawdown, std dev) are Composer's all-time account metrics. On this refresh the chart and period stats run through <b>2026-10-23</b>, the most recent trading day (Friday’s close). All three lines cover identical trading days, and the portfolio value, latest move and risk metrics in the cards above are live as of the 2026-10-23 pull.
 </div>
 
 <h2>Performance — Time-Weighted Return vs SPY &amp; QQQ</h2>
@@ -81,32 +81,32 @@ th:first-child,td:first-child{text-align:left}
 <div class="log" id="log"></div>
 
 <script>
-/* ================= EMBEDDED DATA (refreshed 2026-10-17) ================= */
-/* Portfolio series + benchmarks run through 2026-10-16, the most recent trading day
-   (17 October is a Saturday). Portfolio value, last session's move and the account risk
-   metrics below are live as of the 2026-10-17 pull. */
-const ASOF = "2026-10-16";
-const LIVEDATE = "2026-10-17";
+/* ================= EMBEDDED DATA (refreshed 2026-10-23) ================= */
+/* Portfolio series + benchmarks run through 2026-10-23 (Friday), the most recent trading day.
+   Portfolio value, last session's move and the account risk metrics below are live as of
+   the 2026-10-23 pull. */
+const ASOF = "2026-10-23";
+const LIVEDATE = "2026-10-23";
 
-const TOT = { pv:8529.41, nd:9942.65, sharpe:0.31, mdd:-35.05, sd:37.58,
-  todayPct:-7.59, todayDol:-700.75, cash:9.29, unalloc:0.00,
-  sinceAug:5.64, spyAug:2.17, qqqAug:3.17 };
+const TOT = { pv:8449.98, nd:10107.65, sharpe:0.21, mdd:-35.05, sd:38.17,
+  todayPct:0.03, todayDol:2.76, cash:8.44, unalloc:0.00,
+  sinceAug:2.70, spyAug:1.73, qqqAug:2.39 };
 
 /* RAW: yymmdd,portfolioValue,cumTWR% */
 /* Window starts 2026-08-01 per Kenny (2026-08-16). First point (260731) is the rebase anchor only. */
-const RAW = "260731,6486.24,-0.9370|260803,6986.16,4.1240|260804,7673.76,14.3730|260805,7470.89,11.3490|260806,7387.90,10.1120|260807,7637.90,13.8380|260810,7734.25,12.8260|260811,7658.71,11.7240|260812,7819.98,14.0760|260813,8087.03,17.9720|260814,8049.33,17.4220|260817,8173.48,16.8320|260818,7768.21,11.0390|260819,7719.38,10.3410|260820,7550.29,7.9240|260821,7624.14,8.9790|260824,7557.98,5.7120|260825,7692.82,7.5980|260826,7714.22,7.8970|260827,8017.08,12.1330|260828,7861.91,9.9630|260831,8034.40,10.0670|260901,7737.96,6.0060|260902,7786.12,6.6650|260903,8046.70,10.2350|260904,8084.64,10.7550|260908,8226.21,10.4370|260909,8158.46,9.5270|260910,7891.91,5.9490|260911,8093.53,8.6560|260914,8063.74,6.0710|260915,7908.06,4.0230|260916,7911.55,4.0690|260917,8312.95,9.3490|260918,8459.55,11.2780|260921,9354.07,20.7670|260922,9576.92,23.6450|260923,9320.07,20.3290|260924,9310.48,20.2050|260925,9431.21,21.7630|260928,9293.20,17.8900|260929,9342.62,18.5170|260930,9429.57,19.6200|261001,9514.08,20.6920|261002,9789.33,24.1840|261005,10209.05,27.3840|261006,10345.40,29.0860|261007,10268.11,28.1210|261008,9852.26,22.9330|261009,9981.06,24.5400|261012,9776.20,21.9840|261013,9843.07,20.7710|261014,9267.63,13.7100|261015,9230.16,13.2510|261016,8529.41,4.6530";
+const RAW = "260731,6486.24,-0.9365|260803,6986.16,4.1245|260804,7673.76,14.3727|260805,7470.89,11.3490|260806,7387.90,10.1121|260807,7637.90,13.8382|260810,7734.25,12.8258|260811,7658.71,11.7238|260812,7819.98,14.0764|260813,8087.03,17.9720|260814,8049.33,17.4220|260817,8173.48,16.8318|260818,7768.21,11.0388|260819,7719.38,10.3409|260820,7550.29,7.9240|260821,7624.14,8.9795|260824,7557.98,5.7120|260825,7692.82,7.5980|260826,7714.22,7.8973|260827,8017.08,12.1334|260828,7861.91,9.9630|260831,8034.40,10.0667|260901,7737.96,6.0056|260902,7786.12,6.6654|260903,8046.70,10.2352|260904,8084.64,10.7550|260908,8226.21,10.4369|260909,8158.46,9.5274|260910,7891.91,5.9490|260911,8093.53,8.6557|260914,8063.74,6.0711|260915,7908.06,4.0232|260916,7911.55,4.0691|260917,8312.95,9.3492|260918,8459.55,11.2776|260921,9354.07,20.7675|260922,9576.92,23.6446|260923,9320.07,20.3285|260924,9310.48,20.2047|260925,9431.21,21.7635|260928,9293.20,17.8903|260929,9342.62,18.5172|260930,9429.57,19.6202|261001,9514.08,20.6922|261002,9789.33,24.1839|261005,10209.05,27.3845|261006,10345.40,29.0857|261007,10268.11,28.1214|261008,9852.26,22.9326|261009,9981.06,24.5397|261012,9776.20,21.9836|261013,9843.07,20.7708|261014,9267.63,13.7105|261015,9230.16,13.2507|261016,8529.41,4.6528|261019,8997.94,8.3362|261020,8969.41,7.9927|261021,9249.38,11.3636|261022,8447.22,1.7054|261023,8449.98,1.7387";
 
 /* SPYRAW: yymmdd,close — same trading days */
-const SPYRAW = "260731,747.03|260803,757.67|260804,771.33|260805,769.79|260806,768.56|260807,773.26|260810,773.03|260811,770.56|260812,772.49|260813,777.88|260814,776.34|260817,772.67|260818,767.45|260819,769.06|260820,762.60|260821,765.72|260824,763.47|260825,765.91|260826,766.08|260827,771.10|260828,769.35|260831,767.05|260901,761.78|260902,765.16|260903,773.17|260904,770.19|260908,765.96|260909,762.40|260910,757.83|260911,764.29|260914,760.88|260915,757.39|260916,754.05|260917,762.60|260918,761.69|260921,773.50|260922,773.38|260923,767.81|260924,767.18|260925,771.35|260928,765.61|260929,764.20|260930,762.63|261001,763.99|261002,769.64|261005,774.83|261006,779.09|261007,777.22|261008,773.93|261009,778.57|261012,778.10|261013,778.01|261014,769.60|261015,771.79|261016,763.25";
+const SPYRAW = "260731,747.03|260803,757.67|260804,771.33|260805,769.79|260806,768.56|260807,773.26|260810,773.03|260811,770.56|260812,772.49|260813,777.88|260814,776.34|260817,772.67|260818,767.45|260819,769.06|260820,762.60|260821,765.72|260824,763.47|260825,765.91|260826,766.08|260827,771.10|260828,769.35|260831,767.05|260901,761.78|260902,765.16|260903,773.17|260904,770.19|260908,765.96|260909,762.40|260910,757.83|260911,764.29|260914,760.88|260915,757.39|260916,754.05|260917,762.60|260918,761.69|260921,773.50|260922,773.38|260923,767.81|260924,767.18|260925,771.35|260928,765.61|260929,764.20|260930,762.63|261001,763.99|261002,769.64|261005,774.83|261006,779.09|261007,777.22|261008,773.93|261009,778.57|261012,778.10|261013,778.01|261014,769.60|261015,771.79|261016,763.25|261019,766.48|261020,769.05|261021,773.09|261022,763.96|261023,759.97";
 
 /* QQQRAW: yymmdd,close — same trading days */
-const QQQRAW = "260731,687.99|260803,700.07|260804,723.85|260805,717.30|260806,714.65|260807,723.03|260810,720.87|260811,718.45|260812,723.70|260813,732.07|260814,731.07|260817,729.87|260818,717.51|260819,716.08|260820,710.93|260821,713.44|260824,706.32|260825,710.72|260826,711.37|260827,721.11|260828,716.43|260831,716.76|260901,707.64|260902,709.24|260903,717.67|260904,718.96|260908,718.36|260909,716.31|260910,708.69|260911,714.88|260914,709.18|260915,704.54|260916,704.72|260917,716.92|260918,721.45|260921,741.47|260922,747.46|260923,741.21|260924,741.10|260925,744.50|260928,736.53|260929,737.93|260930,739.77|261001,742.03|261002,749.58|261005,756.20|261006,759.66|261007,757.73|261008,747.58|261009,751.27|261012,746.04|261013,743.57|261014,728.95|261015,728.00|261016,709.80";
+const QQQRAW = "260731,687.99|260803,700.07|260804,723.85|260805,717.30|260806,714.65|260807,723.03|260810,720.87|260811,718.45|260812,723.70|260813,732.07|260814,731.07|260817,729.87|260818,717.51|260819,716.08|260820,710.93|260821,713.44|260824,706.32|260825,710.72|260826,711.37|260827,721.11|260828,716.43|260831,716.76|260901,707.64|260902,709.24|260903,717.67|260904,718.96|260908,718.36|260909,716.31|260910,708.69|260911,714.88|260914,709.18|260915,704.54|260916,704.72|260917,716.92|260918,721.45|260921,741.47|260922,747.46|260923,741.21|260924,741.10|260925,744.50|260928,736.53|260929,737.93|260930,739.77|261001,742.03|261002,749.58|261005,756.20|261006,759.66|261007,757.73|261008,747.58|261009,751.27|261012,746.04|261013,743.57|261014,728.95|261015,728.00|261016,709.80|261019,718.36|261020,717.63|261021,725.20|261022,704.47|261023,704.40";
 
 /* Active symphonies */
 const syms = [
-  { name:"KEFCAP TQQQ Long (Buy Copy) (Buy Copy)", value:8529.42, netDep:9523.86, twr:36.09, ann:76.18,
-    sharpe:1.25, mdd:-29.51, sd:60.54, invested:"2026-04-07", lastRebalance:"2026-10-14",
-    todayDol:-700.74, holdings:[{t:"TQQQ",a:99.89,v:8520.13}] }
+  { name:"KEFCAP TQQQ Long (Buy Copy) (Buy Copy)", value:8449.98, netDep:9688.86, twr:32.35, ann:64.21,
+    sharpe:1.13, mdd:-29.51, sd:60.94, invested:"2026-04-07", lastRebalance:"2026-10-22",
+    todayDol:2.76, holdings:[{t:"BIL",a:99.90,v:8441.54}] }
 ];
 
 /* Monthly + cumulative ranks (deposit-adjusted). retM = month return %, retC = cumulative % as of month end */
@@ -115,19 +115,20 @@ const syms = [
 const RK = [
   { m:"2026-08", rows:[{name:syms[0].name, retM:11.11, rankM:1, retC:11.11, rankC:1, chg:0}] },
   { m:"2026-09", rows:[{name:syms[0].name, retM:8.68, rankM:1, retC:20.75, rankC:1, chg:0}] },
-  { m:"2026-10 (MTD)", rows:[{name:syms[0].name, retM:-12.51, rankM:1, retC:5.64, rankC:1, chg:0}] }
+  { m:"2026-10", rows:[{name:syms[0].name, retM:-14.95, rankM:1, retC:2.7, rankC:1, chg:0}] }
 ];
 
 /* Aggregated holdings */
 const holds = [
-  { t:"TQQQ", name:"ProShares UltraPro QQQ", alloc:99.89, nSym:1, value:8520.13 },
-  { t:"CASH", name:"Unallocated / sweep cash", alloc:0.11, nSym:0, value:9.29 }
+  { t:"BIL", name:"SPDR Bloomberg 1-3 Month T-Bill ETF", alloc:99.90, nSym:1, value:8441.54 },
+  { t:"CASH", name:"Unallocated / sweep cash", alloc:0.10, nSym:0, value:8.44 }
 ];
 
 /* Activity log (newest first). Deposits are the real ACH records from Composer's
-   cash endpoint on this pull — eleven completed weekly transfers since 2026-08-01. */
+   cash endpoint on this pull — twelve completed weekly transfers since 2026-08-01. */
 const ach = [
-  ["2026-10-14","Rebalance — KEFCAP TQQQ Long (daily)","REBAL"],
+  ["2026-10-22","Rebalance — KEFCAP TQQQ Long (daily): rotated TQQQ → BIL","REBAL"],
+  ["2026-10-19","Deposit $165.00 (recurring weekly)","DEP"],
   ["2026-10-12","Deposit $165.00 (recurring weekly)","DEP"],
   ["2026-10-05","Deposit $165.00 (recurring weekly)","DEP"],
   ["2026-09-28","Deposit $165.00 (recurring weekly)","DEP"],
